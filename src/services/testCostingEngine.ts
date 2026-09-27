@@ -55,9 +55,6 @@ export function runDeterministicEngineTests(): { passed: boolean; results: strin
     const finishedMeters = 10000;
     const requiredInputMeters = finishedMeters / compoundYield;
 
-    const additiveLoss = 0.02 + 0.035 + 0.015; // 0.07 -> 1 - 0.07 = 0.93
-    const flawedInputMeters = finishedMeters / (1 - additiveLoss);
-
     if (Math.abs(compoundYield - 0.93151) < 0.001 && requiredInputMeters > 0 && requiredInputMeters === finishedMeters / compoundYield) {
       results.push(`✓ Test 3 Passed: Compound multi-stage yield formula (Yield = ∏(1 - Loss_i) = ${(compoundYield * 100).toFixed(2)}%) accurately calculates required input (${requiredInputMeters.toFixed(1)}m).`);
     } else {
