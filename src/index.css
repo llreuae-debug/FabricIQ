@@ -225,6 +225,51 @@ html.light .glass-card {
   animation: live-pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
 }
 
+/* Safe Area Insets for Modern Mobile Displays */
+.pb-safe {
+  padding-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+.pt-safe {
+  padding-top: max(12px, env(safe-area-inset-top));
+}
+
+.mb-safe {
+  margin-bottom: max(16px, env(safe-area-inset-bottom));
+}
+
+/* Touch targets and mobile interaction optimization */
+button, a, input, select, textarea {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.touch-target {
+  min-height: 48px;
+  min-width: 48px;
+}
+
+.touch-target-sm {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+/* Mobile Bottom Sheet Animations */
+@keyframes sheet-slide-up {
+  from {
+    transform: translateY(100%);
+    opacity: 0.8;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.animate-sheet-up {
+  animation: sheet-slide-up 0.28s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* Printing styles for commercial invoices & tech packs */
 @media print {
   body {
@@ -244,3 +289,4 @@ html.light .glass-card {
     color: #000000 !important;
   }
 }
+

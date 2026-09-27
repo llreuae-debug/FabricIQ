@@ -18,6 +18,8 @@ import { SplashScreen } from './components/SplashScreen';
 import { GoogleAuthModal } from './components/GoogleAuthModal';
 import { ReferralModal } from './components/ReferralModal';
 import { UserProfileModal } from './components/UserProfileModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
+import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { ShieldCheck, Sparkles, X, Gift } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
@@ -236,8 +238,11 @@ export function App() {
         onSignOut={() => authService.signOut()}
       />
 
+      {/* PWA Install Banner & Offline Connectivity Alert */}
+      <PwaInstallPrompt />
+
       {/* Main Application Content Container */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28 md:pb-8">
         {activeTab === 'dashboard' && (
           <Dashboard
             currentCurrency={currentCurrency}
@@ -295,6 +300,20 @@ export function App() {
           />
         )}
       </main>
+
+      {/* App-Like Mobile Bottom Navigation Bar */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        onTabChange={setActiveTab}
+        currentLang={currentLang}
+        onLanguageChange={handleLanguageChange}
+        currentCurrency={currentCurrency}
+        onCurrencyChange={handleCurrencyChange}
+        currentUser={currentUser}
+        onOpenAuth={() => setAuthModalOpen(true)}
+        onOpenProfile={() => setProfileModalOpen(true)}
+        onOpenReferral={() => setReferralModalOpen(true)}
+      />
 
       {/* Modern FabricIQ Footer */}
       <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0B1220]/90 backdrop-blur-md py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors duration-200">

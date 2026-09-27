@@ -6,23 +6,18 @@ import {
   Layers, 
   PieChart as PieIcon, 
   FileCheck, 
-  Sliders, 
-  Settings2, 
-  Percent, 
-  Sparkles, 
   Info, 
   ChevronDown, 
   ChevronUp, 
-  Boxes, 
-  Palette, 
-  Package, 
   CheckCircle2, 
   FileSpreadsheet, 
   Plus, 
   Trash2, 
   RefreshCw, 
   Eye,
-  BarChart3
+  BarChart3,
+  ArrowLeft,
+  ArrowRight
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -378,8 +373,35 @@ export const Calculator: React.FC<CalculatorProps> = ({
     cumulative: Number(item.cumulativeCostPerMeter.toFixed(2)),
   })) || [];
 
+  const COSTING_STEPS = [
+    { id: 'physical', num: 1, label: 'Physical Specs', short: 'Specs' },
+    { id: 'yield', num: 2, label: 'Yield & Losses', short: 'Yield' },
+    { id: 'rates', num: 3, label: 'Yarn & Weaving', short: 'Yarn' },
+    { id: 'processing', num: 4, label: 'Processing & Dyeing', short: 'Dyeing' },
+    { id: 'printing', num: 5, label: 'Printing / Colors', short: 'Colors' },
+    { id: 'logistics', num: 6, label: 'Packaging & Logistics', short: 'Logistics' },
+    { id: 'commercial', num: 7, label: 'Margin & Tax', short: 'Commercial' },
+    { id: 'audit', num: 8, label: 'Formula Audit & Waterfall', short: 'Audit' },
+  ] as const;
+
+  const currentStepIndex = COSTING_STEPS.findIndex((s) => s.id === activeTabSection);
+
+  const handlePrevStep = () => {
+    if (currentStepIndex > 0) {
+      setActiveTabSection(COSTING_STEPS[currentStepIndex - 1].id as any);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
+  const handleNextStep = () => {
+    if (currentStepIndex < COSTING_STEPS.length - 1) {
+      setActiveTabSection(COSTING_STEPS[currentStepIndex + 1].id as any);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-6 animate-in fade-in duration-300 pb-20 md:pb-6">
       {/* Top Header & Navigation Bar */}
       <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4 p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl">
         <div className="space-y-1">
@@ -515,19 +537,51 @@ export const Calculator: React.FC<CalculatorProps> = ({
         </div>
       </div>
 
-      {/* 3D Floating Navigation Sub-Tabs Dock */}
-      <div className="p-1.5 rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-950/90 border border-slate-800/90 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.08)] backdrop-blur-xl flex items-center gap-1.5 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
-        {[
-          { id: 'physical', num: '1', label: 'Physical Specs', icon: Sliders },
-          { id: 'yield', num: '2', label: 'Multi-Stage Yield', icon: Boxes },
-          { id: 'rates', num: '3', label: 'Yarn & Weaving/Knit', icon: Settings2 },
-          { id: 'processing', num: '4', label: 'Processing & Dyeing', icon: Sparkles },
-          { id: 'printing', num: '5', label: 'Color-Wise Printing', icon: Palette },
-          { id: 'logistics', num: '6', label: 'Packaging & Logistics', icon: Package },
-          { id: 'commercial', num: '7', label: 'Margin & Tax', icon: Percent },
-          { id: 'audit', num: '8', label: 'Formula Audit & Waterfall', icon: FileSpreadsheet },
-        ].map((tab) => {
-          const Icon = tab.icon;
+      {/* MOBILE STEP WIZARD PROGRESS BAR (Visible on Mobile & Small Tablets) */}
+      <div className="md:hidden p-3.5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2.5 shadow-md">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <span className="w-6 h-6 rounded-full bg-gradient-to-r from-blue-600 to-cyan-500 text-slate-950 font-black text-xs flex items-center justify-center">
+              {currentStepIndex + 1}
+            </span>
+            <span className="text-xs font-bold text-white font-['Outfit']">
+              {COSTING_STEPS[currentStepIndex]?.label}
+            </span>
+          </div>
+          <span className="text-[10px] font-mono text-cyan-400 font-bold">
+            Step {currentStepIndex + 1} of {COSTING_STEPS.length}
+          </span>
+        </div>
+
+        {/* Dynamic Progress Bar */}
+        <div className="w-full h-1.5 rounded-full bg-slate-950 overflow-hidden">
+          <div 
+            className="h-full bg-gradient-to-r from-blue-500 via-cyan-400 to-emerald-400 transition-all duration-300 rounded-full"
+            style={{ width: `${((currentStepIndex + 1) / COSTING_STEPS.length) * 100}%` }}
+          />
+        </div>
+
+        {/* Fast Jump Step Pills */}
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none pt-1">
+          {COSTING_STEPS.map((s) => (
+            <button
+              key={s.id}
+              onClick={() => setActiveTabSection(s.id as any)}
+              className={`px-2.5 py-1.5 rounded-xl text-[10px] font-black whitespace-nowrap transition-all touch-target-sm ${
+                activeTabSection === s.id
+                  ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-sm scale-105'
+                  : 'bg-slate-950 text-slate-400 hover:text-white'
+              }`}
+            >
+              {s.num}. {s.short}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* DESKTOP & TABLET 3D Floating Navigation Sub-Tabs Dock */}
+      <div className="hidden md:flex p-1.5 rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-950/90 border border-slate-800/90 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.08)] backdrop-blur-xl items-center gap-1.5 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
+        {COSTING_STEPS.map((tab) => {
           const isActive = activeTabSection === tab.id;
           return (
             <button
@@ -548,7 +602,6 @@ export const Calculator: React.FC<CalculatorProps> = ({
               >
                 {tab.num}
               </span>
-              <Icon className={`w-3.5 h-3.5 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-indigo-400'}`} />
               <span>{tab.label}</span>
               {isActive && (
                 <span className="absolute bottom-[-1px] left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#22d3ee]" />
@@ -1458,22 +1511,93 @@ export const Calculator: React.FC<CalculatorProps> = ({
                     </div>
                   </div>
 
-                  {/* Individual Colors Breakdown Table */}
-                  <div className="space-y-2">
+                  {/* Color Channels Section */}
+                  <div className="space-y-3">
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-bold text-slate-300">
                         Color Channels ({inputs.colorPrinting.colors?.length || 0} Colors)
                       </span>
                       <button
                         onClick={addPrintingColor}
-                        className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 hover:text-indigo-300 px-2 py-1 rounded bg-indigo-600/20 border border-indigo-500/30"
+                        className="flex items-center gap-1.5 text-xs font-bold text-indigo-300 hover:text-white px-3 py-1.5 rounded-xl bg-indigo-600/30 hover:bg-indigo-600/50 border border-indigo-500/40 touch-target-sm cursor-pointer"
                       >
-                        <Plus className="w-3 h-3" />
-                        <span>Add Color</span>
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>+ Add Color</span>
                       </button>
                     </div>
 
-                    <div className="overflow-x-auto rounded-xl border border-slate-800">
+                    {/* MOBILE EXPANDABLE COLOR CARDS (Visible on phones sm:hidden) */}
+                    <div className="sm:hidden space-y-3">
+                      {inputs.colorPrinting.colors?.map((col, idx) => (
+                        <div 
+                          key={col.id} 
+                          className="p-3.5 rounded-2xl bg-slate-950/80 border border-slate-800 space-y-3 shadow-md"
+                        >
+                          <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                            <div className="flex items-center gap-2">
+                              <span className="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-400 font-black text-[10px] flex items-center justify-center">
+                                {idx + 1}
+                              </span>
+                              <span className="text-xs font-bold text-white font-['Outfit']">
+                                {col.colorName || `Color ${idx + 1}`}
+                              </span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-mono font-bold text-emerald-400">
+                                ₨ {((col.consumptionGramsPerMeter / 1000) * col.inkRatePerKg).toFixed(2)}/m
+                              </span>
+                              <button
+                                onClick={() => removePrintingColor(col.id)}
+                                className="p-1.5 rounded-lg text-red-400 hover:text-red-300 hover:bg-red-500/20 touch-target-sm"
+                                title="Remove Color"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </button>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-2.5">
+                            <div>
+                              <label className="block text-[11px] font-semibold text-slate-400 mb-1">Color Name / Reference</label>
+                              <input
+                                type="text"
+                                value={col.colorName}
+                                onChange={(e) => updatePrintingColor(col.id, 'colorName', e.target.value)}
+                                className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-white"
+                                placeholder="e.g. Cyan, Deep Navy"
+                              />
+                            </div>
+
+                            <div className="grid grid-cols-2 gap-2">
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-400 mb-1">Consumption (g/m)</label>
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  step="0.1"
+                                  value={col.consumptionGramsPerMeter}
+                                  onChange={(e) => updatePrintingColor(col.id, 'consumptionGramsPerMeter', Number(e.target.value))}
+                                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-white"
+                                />
+                              </div>
+                              <div>
+                                <label className="block text-[11px] font-semibold text-slate-400 mb-1">Ink Rate (₨/Kg)</label>
+                                <input
+                                  type="number"
+                                  inputMode="decimal"
+                                  value={col.inkRatePerKg}
+                                  onChange={(e) => updatePrintingColor(col.id, 'inkRatePerKg', Number(e.target.value))}
+                                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs font-mono text-white"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* DESKTOP / TABLET COLOR TABLE (Visible on sm:block) */}
+                    <div className="hidden sm:block overflow-x-auto rounded-xl border border-slate-800">
                       <table className="w-full text-left text-xs">
                         <thead className="bg-slate-950 text-slate-400 text-[11px] uppercase border-b border-slate-800">
                           <tr>
@@ -1492,24 +1616,26 @@ export const Calculator: React.FC<CalculatorProps> = ({
                                   type="text"
                                   value={col.colorName}
                                   onChange={(e) => updatePrintingColor(col.id, 'colorName', e.target.value)}
-                                  className="w-full p-1 rounded bg-slate-950 border border-slate-800 text-xs text-white"
+                                  className="w-full p-1.5 rounded bg-slate-950 border border-slate-800 text-xs text-white"
                                 />
                               </td>
                               <td className="p-2">
                                 <input
                                   type="number"
+                                  inputMode="decimal"
                                   step="0.1"
                                   value={col.consumptionGramsPerMeter}
                                   onChange={(e) => updatePrintingColor(col.id, 'consumptionGramsPerMeter', Number(e.target.value))}
-                                  className="w-24 p-1 rounded bg-slate-950 border border-slate-800 text-xs text-white"
+                                  className="w-24 p-1.5 rounded bg-slate-950 border border-slate-800 text-xs text-white"
                                 />
                               </td>
                               <td className="p-2">
                                 <input
                                   type="number"
+                                  inputMode="decimal"
                                   value={col.inkRatePerKg}
                                   onChange={(e) => updatePrintingColor(col.id, 'inkRatePerKg', Number(e.target.value))}
-                                  className="w-28 p-1 rounded bg-slate-950 border border-slate-800 text-xs text-white"
+                                  className="w-28 p-1.5 rounded bg-slate-950 border border-slate-800 text-xs text-white"
                                 />
                               </td>
                               <td className="p-2 font-bold text-emerald-400">
@@ -1914,6 +2040,31 @@ export const Calculator: React.FC<CalculatorProps> = ({
               </div>
             </div>
           )}
+
+          {/* RESPONSIVE STEP-BASED NAVIGATION CONTROLS (Previous ← / Next →) */}
+          <div className="flex items-center justify-between gap-3 p-4 rounded-2xl bg-slate-900/90 border border-slate-800 shadow-md">
+            <button
+              onClick={handlePrevStep}
+              disabled={currentStepIndex === 0}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-slate-800/90 hover:bg-slate-700 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-slate-200 border border-slate-700 transition-all touch-target cursor-pointer active:scale-95"
+            >
+              <ArrowLeft className="w-4 h-4" />
+              <span>Previous Step</span>
+            </button>
+
+            <span className="hidden sm:inline-block text-xs font-mono font-bold text-cyan-400">
+              {currentStepIndex + 1} / {COSTING_STEPS.length}
+            </span>
+
+            <button
+              onClick={handleNextStep}
+              disabled={currentStepIndex === COSTING_STEPS.length - 1}
+              className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-gradient-to-r from-blue-600 via-cyan-500 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-30 disabled:cursor-not-allowed text-xs font-bold text-white shadow-lg shadow-cyan-500/20 transition-all touch-target cursor-pointer active:scale-95"
+            >
+              <span>Next Step</span>
+              <ArrowRight className="w-4 h-4" />
+            </button>
+          </div>
         </div>
 
         {/* Right Output Results & Commercial Breakdown (5 Cols) */}

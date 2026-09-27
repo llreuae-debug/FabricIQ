@@ -1,0 +1,39 @@
+{
+  "name": "FabricIQ — Smart Textile Costing & Live Market Intelligence",
+  "short_name": "FabricIQ",
+  "description": "Professional deterministic textile costing engine and live market rates platform.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0B1220",
+  "theme_color": "#0B1220",
+  "orientation": "any",
+  "categories": ["business", "finance", "productivity"],
+  "icons": [
+    {
+      "src": "/favicon.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/logo.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Cost Calculator",
+      "short_name": "Calculator",
+      "url": "/?tab=calculator",
+      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Live Market Rates",
+      "short_name": "Rates",
+      "url": "/?tab=market_rates",
+      "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
+    }
+  ]
+}
