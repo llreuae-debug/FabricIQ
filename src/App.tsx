@@ -20,6 +20,8 @@ import { ReferralModal } from './components/ReferralModal';
 import { UserProfileModal } from './components/UserProfileModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
+import { PublicPages, type PublicPageView } from './components/PublicPages';
+import { ConsentBanner } from './components/ConsentBanner';
 import { ShieldCheck, Sparkles, X, Gift } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
@@ -299,6 +301,28 @@ export function App() {
             onSync={handleSyncMarketRates}
           />
         )}
+        {/* PUBLIC INFORMATIVE & LEGAL PAGES (AdSense Ready) */}
+        {[
+          'about',
+          'features',
+          'knowledge',
+          'pricing',
+          'contact',
+          'faq',
+          'privacy',
+          'terms',
+          'cookies',
+          'disclaimer',
+        ].includes(activeTab) && (
+          <PublicPages
+            initialView={activeTab as PublicPageView}
+            onNavigateToCalculator={() => handleNavigateToCalculator()}
+            onNavigateToMarket={() => {
+              setActiveTab('market_rates');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+          />
+        )}
       </main>
 
       {/* App-Like Mobile Bottom Navigation Bar */}
@@ -315,33 +339,159 @@ export function App() {
         onOpenReferral={() => setReferralModalOpen(true)}
       />
 
-      {/* Modern FabricIQ Footer */}
-      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0B1220]/90 backdrop-blur-md py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors duration-200">
-        <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl overflow-hidden bg-white p-0.5 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-center">
-              <img src={logoImg} alt="FabricIQ" className="w-full h-full object-cover rounded-[7px]" />
+      {/* GDPR / CCPA / Google AdSense Consent Banner */}
+      <ConsentBanner
+        onOpenPrivacy={() => {
+          setActiveTab('privacy');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+        onOpenCookies={() => {
+          setActiveTab('cookies');
+          window.scrollTo({ top: 0, behavior: 'smooth' });
+        }}
+      />
+
+      {/* Comprehensive Google Publisher & SaaS Categorized Footer */}
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-[#0B1220]/95 backdrop-blur-md pt-12 pb-24 md:pb-12 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors duration-200">
+        <div className="max-w-7xl mx-auto space-y-8">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-8">
+            {/* Col 1: Brand & Mission */}
+            <div className="col-span-2 space-y-3">
+              <div className="flex items-center gap-2.5">
+                <div className="w-8 h-8 rounded-xl overflow-hidden bg-white p-0.5 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+                  <img src={logoImg} alt="FabricIQ" className="w-full h-full object-cover rounded-[7px]" />
+                </div>
+                <div className="flex items-center gap-1">
+                  <span className="font-extrabold text-slate-900 dark:text-white font-['Outfit'] tracking-tight text-lg">FABRIC</span>
+                  <span className="text-gradient-fiq font-extrabold font-['Outfit'] text-lg">IQ</span>
+                  <span className="ml-1 text-[9px] font-mono px-1.5 py-0.2 rounded bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">PRO</span>
+                </div>
+              </div>
+              <p className="text-xs text-slate-500 dark:text-slate-400 max-w-sm leading-relaxed">
+                Smart Textile Costing & Live Market Intelligence. Deterministic calculations, verified currency benchmarks, and audit trail generation for mills, converters, and export houses.
+              </p>
+              <div className="flex items-center gap-3 pt-1">
+                <span className="flex items-center gap-1 text-[11px] text-emerald-500 font-medium">
+                  <ShieldCheck className="w-3.5 h-3.5" />
+                  Verified Textile Index Feeds
+                </span>
+              </div>
             </div>
-            <div>
-              <span className="font-extrabold text-slate-900 dark:text-white font-['Outfit'] tracking-tight">FABRIC</span>
-              <span className="text-gradient-fiq font-extrabold font-['Outfit']">IQ</span>
-              <span className="ml-2 text-slate-500 dark:text-slate-400">• Smart Textile Costing & Live Market Intelligence</span>
+
+            {/* Col 2: Costing Platform */}
+            <div className="space-y-2.5">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 uppercase tracking-wider font-['Outfit']">
+                Costing Tools
+              </h4>
+              <ul className="space-y-1.5 text-xs">
+                <li>
+                  <button onClick={() => { setActiveTab('calculator'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Cost Calculator
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('market_rates'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Live Market Rates
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('saved_estimates'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Saved Quotations
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('utilities'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Textile Engineering Tools
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 3: Technical Knowledge Base */}
+            <div className="space-y-2.5">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 uppercase tracking-wider font-['Outfit']">
+                Guides & Science
+              </h4>
+              <ul className="space-y-1.5 text-xs">
+                <li>
+                  <button onClick={() => { setActiveTab('knowledge'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Costing Mathematics
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('knowledge'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Fabric GSM Mechanics
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('knowledge'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Loom Economic Equations
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('knowledge'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Printing Screen Amortization
+                  </button>
+                </li>
+              </ul>
+            </div>
+
+            {/* Col 4: Legal & AdSense Compliance */}
+            <div className="space-y-2.5">
+              <h4 className="text-xs font-bold text-slate-900 dark:text-slate-200 uppercase tracking-wider font-['Outfit']">
+                Legal & Policies
+              </h4>
+              <ul className="space-y-1.5 text-xs">
+                <li>
+                  <button onClick={() => { setActiveTab('privacy'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Privacy Policy
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('terms'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Terms & Conditions
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('cookies'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Cookie Policy
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('disclaimer'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    Market Disclaimer
+                  </button>
+                </li>
+                <li>
+                  <button onClick={() => { setActiveTab('faq'); window.scrollTo({ top: 0, behavior: 'smooth' }); }} className="hover:text-cyan-500 transition-colors cursor-pointer">
+                    FAQ & Help
+                  </button>
+                </li>
+              </ul>
             </div>
           </div>
 
-          <div className="flex items-center gap-4 text-[11px]">
-            <button
-              onClick={() => setReferralModalOpen(true)}
-              className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400 font-bold hover:underline cursor-pointer"
-            >
-              <Gift className="w-3.5 h-3.5" />
-              Invite & Earn Program
-            </button>
-            <span className="text-slate-300 dark:text-slate-700">|</span>
-            <span className="flex items-center gap-1 text-emerald-500 font-medium">
-              <ShieldCheck className="w-3.5 h-3.5" />
-              Verified Textile Index Feeds
-            </span>
+          <div className="pt-6 border-t border-slate-200 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-4 text-[11px]">
+            <div>
+              © 2026 FabricIQ Technologies. All rights reserved. • <a href="/ads.txt" target="_blank" rel="noreferrer" className="text-slate-400 hover:underline">Authorized Digital Sellers (ads.txt)</a>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <button
+                onClick={() => setReferralModalOpen(true)}
+                className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400 font-bold hover:underline cursor-pointer"
+              >
+                <Gift className="w-3.5 h-3.5" />
+                Invite & Earn Rewards
+              </button>
+              <span className="text-slate-300 dark:text-slate-700">|</span>
+              <button
+                onClick={() => { setActiveTab('contact'); window.scrollTo({ top: 0, behavior: 'smooth' }); }}
+                className="hover:text-slate-900 dark:hover:text-white transition-colors cursor-pointer"
+              >
+                Contact Support
+              </button>
+            </div>
           </div>
         </div>
       </footer>

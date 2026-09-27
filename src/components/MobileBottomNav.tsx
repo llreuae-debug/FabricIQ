@@ -13,7 +13,9 @@ import {
   Sparkles, 
   ChevronRight,
   Globe,
-  Coins
+  Coins,
+  BookOpen,
+  Building2
 } from 'lucide-react';
 import type { CurrencyCode, LanguageCode, User as UserType } from '../types';
 import { LANGUAGES } from '../services/i18n';
@@ -213,6 +215,30 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
                 <Wrench className="w-4 h-4 text-blue-500" />
                 <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Textile Tools</div>
                 <div className="text-[10px] text-slate-500">Yarn count, GSM, crimp</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  onTabChange('knowledge');
+                  setMoreSheetOpen(false);
+                }}
+                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left space-y-1 hover:border-cyan-500 transition-colors cursor-pointer"
+              >
+                <BookOpen className="w-4 h-4 text-cyan-400" />
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Knowledge Base</div>
+                <div className="text-[10px] text-slate-500">Guides, formulas, physics</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  onTabChange('about');
+                  setMoreSheetOpen(false);
+                }}
+                className="p-3 rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-left space-y-1 hover:border-blue-500 transition-colors cursor-pointer"
+              >
+                <Building2 className="w-4 h-4 text-indigo-400" />
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">About & Policies</div>
+                <div className="text-[10px] text-slate-500">Overview, terms & FAQ</div>
               </button>
 
               <button

@@ -16,7 +16,9 @@ import {
   Search,
   AlertTriangle,
   Award,
-  Sparkles
+  Sparkles,
+  Megaphone,
+  CheckCircle2
 } from 'lucide-react';
 import type { CurrencyCode, MarketRate, RateCategory, RateStatus, User, Referral, MembershipType, AdminAuditLog } from '../types';
 import { marketRateService } from '../services/marketRateService';
@@ -24,6 +26,7 @@ import { currencyService, CURRENCY_MAP } from '../services/currencyService';
 import { authService } from '../services/authService';
 import { referralService } from '../services/referralService';
 import { auditService } from '../services/auditService';
+import { adService, type AdSettings } from '../services/adService';
 import { MembershipBadge } from './MembershipBadge';
 
 interface AdminPanelProps {
@@ -32,8 +35,11 @@ interface AdminPanelProps {
 }
 
 export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
-  const [activeTab, setActiveTab] = useState<'members' | 'referrals' | 'rates' | 'forex' | 'admin_audit' | 'suppliers' | 'apis'>('members');
+  const [activeTab, setActiveTab] = useState<'members' | 'referrals' | 'rates' | 'forex' | 'admin_audit' | 'suppliers' | 'adsense'>('members');
   const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
+
+  // AdSense & Advertising Settings State
+  const [adConfig, setAdConfig] = useState<AdSettings>(adService.getSettings());
 
   // Members Management State
   const [usersList, setUsersList] = useState<User[]>(authService.getAllUsers());
@@ -360,14 +366,26 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
 
         <button
           onClick={() => setActiveTab('suppliers')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
             activeTab === 'suppliers'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? 'bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 text-white shadow-lg shadow-blue-500/20 scale-[1.02] -translate-y-0.5'
+              : 'bg-slate-900/60 hover:bg-slate-800/90 text-slate-300 hover:text-white border border-slate-800/80 hover:border-slate-700'
           }`}
         >
           <Server className="w-3.5 h-3.5" />
           <span>Suppliers ({suppliers.length})</span>
+        </button>
+
+        <button
+          onClick={() => setActiveTab('adsense')}
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
+            activeTab === 'adsense'
+              ? 'bg-gradient-to-b from-amber-500 via-amber-600 to-amber-700 text-slate-950 shadow-[0_6px_20px_rgba(245,158,11,0.45),inset_0_1px_1px_rgba(255,255,255,0.4)] border border-amber-400 font-extrabold scale-[1.02] -translate-y-0.5'
+              : 'bg-slate-900/60 hover:bg-slate-800/90 text-amber-400 hover:text-amber-300 border border-slate-800/80 hover:border-slate-700'
+          }`}
+        >
+          <Megaphone className="w-3.5 h-3.5" />
+          <span>AdSense & Ads</span>
         </button>
       </div>
 
@@ -952,6 +970,208 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
                 </div>
               </div>
             ))}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 7: GOOGLE ADSENSE & PUBLISHER ADVERTISING MANAGEMENT */}
+      {activeTab === 'adsense' && (
+        <div className="space-y-6 animate-in fade-in">
+          {/* AdSense Status Banner */}
+          <div className="p-6 rounded-3xl bg-slate-900 border border-slate-800 space-y-4">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center">
+                  <Megaphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white font-['Outfit'] flex items-center gap-2">
+                    <span>Google AdSense & Publisher Integration</span>
+                    <span className={`text-[10px] font-mono px-2 py-0.5 rounded-full font-bold border ${
+                      adConfig.enabled
+                        ? 'bg-emerald-500/20 text-emerald-400 border-emerald-500/30'
+                        : 'bg-slate-800 text-slate-400 border-slate-700'
+                    }`}>
+                      {adConfig.enabled ? 'ACTIVE' : 'PAUSED'}
+                    </span>
+                  </h3>
+                  <p className="text-xs text-slate-400">
+                    Manage publisher credentials, slots, test mode preview, and compliance policy settings
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => {
+                    const updated = { ...adConfig, enabled: !adConfig.enabled };
+                    setAdConfig(updated);
+                    adService.updateSettings(updated);
+                  }}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                    adConfig.enabled
+                      ? 'bg-amber-500/20 hover:bg-amber-500/30 text-amber-300 border border-amber-500/40'
+                      : 'bg-emerald-500/20 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/40'
+                  }`}
+                >
+                  {adConfig.enabled ? 'Pause All Ads' : 'Enable Ads'}
+                </button>
+              </div>
+            </div>
+
+            {/* Global Ad Controls */}
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+                <label className="block font-semibold text-slate-300">Advertising Provider</label>
+                <select
+                  value={adConfig.provider}
+                  onChange={(e) => {
+                    const updated = { ...adConfig, provider: e.target.value as any };
+                    setAdConfig(updated);
+                    adService.updateSettings(updated);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
+                >
+                  <option value="google_adsense">Google AdSense / MCM</option>
+                  <option value="custom">Custom Textile Sponsors</option>
+                  <option value="none">Disabled (No Ads)</option>
+                </select>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <label className="font-semibold text-slate-300">Ad Preview Mode</label>
+                  <span className={`text-[10px] font-mono px-1.5 py-0.2 rounded font-bold ${
+                    adConfig.testMode ? 'bg-cyan-500/20 text-cyan-300' : 'bg-emerald-500/20 text-emerald-300'
+                  }`}>
+                    {adConfig.testMode ? 'TEST BADGES' : 'LIVE TAGS'}
+                  </span>
+                </div>
+                <select
+                  value={adConfig.testMode ? 'test' : 'live'}
+                  onChange={(e) => {
+                    const updated = { ...adConfig, testMode: e.target.value === 'test' };
+                    setAdConfig(updated);
+                    adService.updateSettings(updated);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
+                >
+                  <option value="test">Test Preview Mode (No real ad requests)</option>
+                  <option value="live">Live Google AdSense Script Active</option>
+                </select>
+              </div>
+
+              <div className="p-4 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+                <label className="block font-semibold text-slate-300">Mobile Ad Density</label>
+                <select
+                  value={adConfig.mobileDensity}
+                  onChange={(e) => {
+                    const updated = { ...adConfig, mobileDensity: e.target.value as any };
+                    setAdConfig(updated);
+                    adService.updateSettings(updated);
+                  }}
+                  className="w-full px-3 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-bold"
+                >
+                  <option value="low">Low (Public & Footer Only)</option>
+                  <option value="standard">Standard (Content & Sidebars)</option>
+                  <option value="high">High Density</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Publisher ID & Slots */}
+            <div className="p-5 rounded-2xl bg-slate-950 border border-slate-800 space-y-4">
+              <h4 className="text-xs font-bold text-amber-400 uppercase tracking-wider flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4" />
+                <span>Google AdSense Publisher ID & Slot Configuration</span>
+              </h4>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Publisher Client ID (ca-pub-...)
+                  </label>
+                  <input
+                    type="text"
+                    value={adConfig.publisherId}
+                    onChange={(e) => {
+                      const updated = { ...adConfig, publisherId: e.target.value };
+                      setAdConfig(updated);
+                      adService.updateSettings(updated);
+                    }}
+                    placeholder="ca-pub-9847291847291847"
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs focus:outline-none focus:border-amber-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Header Banner Slot ID
+                  </label>
+                  <input
+                    type="text"
+                    value={adConfig.slots.headerBanner}
+                    onChange={(e) => {
+                      const updated = { ...adConfig, slots: { ...adConfig.slots, headerBanner: e.target.value } };
+                      setAdConfig(updated);
+                      adService.updateSettings(updated);
+                    }}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    In-Article / Content Slot ID
+                  </label>
+                  <input
+                    type="text"
+                    value={adConfig.slots.inArticle}
+                    onChange={(e) => {
+                      const updated = { ...adConfig, slots: { ...adConfig.slots, inArticle: e.target.value } };
+                      setAdConfig(updated);
+                      adService.updateSettings(updated);
+                    }}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-semibold text-slate-300 mb-1">
+                    Sidebar / Market Slot ID
+                  </label>
+                  <input
+                    type="text"
+                    value={adConfig.slots.sidebarSquare}
+                    onChange={(e) => {
+                      const updated = { ...adConfig, slots: { ...adConfig.slots, sidebarSquare: e.target.value } };
+                      setAdConfig(updated);
+                      adService.updateSettings(updated);
+                    }}
+                    className="w-full px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 text-white font-mono text-xs"
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* ads.txt Verification Box */}
+            <div className="p-4 rounded-2xl bg-slate-950/90 border border-slate-800 space-y-2">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-white flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+                  <span>Authorized Digital Sellers (ads.txt) Status</span>
+                </span>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 font-bold border border-emerald-500/30">
+                  INSTALLED at /ads.txt
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 leading-relaxed">
+                FabricIQ serves a certified ads.txt file from the root origin to protect inventory value and comply with Google AdSense authorization requirements.
+              </p>
+              <pre className="p-2.5 rounded-xl bg-slate-900 font-mono text-[10px] text-cyan-300 overflow-x-auto border border-slate-800">
+                google.com, {adConfig.publisherId.replace('ca-', '')}, DIRECT, f08c47fec0942fa0
+              </pre>
+            </div>
           </div>
         </div>
       )}

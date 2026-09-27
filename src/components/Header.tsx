@@ -22,7 +22,8 @@ import {
   Settings, 
   LogOut,
   ExternalLink,
-  Gift
+  Gift,
+  BookOpen
 } from 'lucide-react';
 import type { CurrencyCode, LanguageCode, User as UserType } from '../types';
 import { CURRENCY_MAP, currencyService } from '../services/currencyService';
@@ -197,6 +198,7 @@ export const Header: React.FC<HeaderProps> = ({
     { id: 'calculator', label: 'Cost Calculator', icon: Calculator },
     { id: 'market_rates', label: 'Market Rates', icon: TrendingUp },
     { id: 'saved_estimates', label: 'Estimates', icon: FileText },
+    { id: 'knowledge', label: 'Guides & Articles', icon: BookOpen },
     { id: 'utilities', label: 'Reports', icon: BarChart3 },
   ];
 
