@@ -35,6 +35,8 @@ import {
   DEFAULT_DETAILED_FINISHING 
 } from '../services/calculationEngine';
 import { i18n } from '../services/i18n';
+import { authService } from '../services/authService';
+import { referralService } from '../services/referralService';
 import logoImg from '../assets/logo.png';
 
 interface DashboardProps {
@@ -43,6 +45,7 @@ interface DashboardProps {
   onNavigateToSavedEstimates: () => void;
   onNavigateToMarketRates: () => void;
   onNavigateToTools: (toolId?: string) => void;
+  onOpenReferral?: () => void;
 }
 
 export const Dashboard: React.FC<DashboardProps> = ({
@@ -51,9 +54,12 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNavigateToSavedEstimates,
   onNavigateToMarketRates,
   onNavigateToTools,
+  onOpenReferral,
 }) => {
   const rates = marketRateService.getRates();
   const savedEstimates = estimateService.getAll().slice(0, 4);
+  const currentUser = authService.getCurrentUser();
+  const referralProgress = referralService.getMilestoneProgress(currentUser);
 
   // Selected commodity for interactive chart
   const [selectedChartRateId, setSelectedChartRateId] = useState<string>('rate-yarn-20-carded');
@@ -201,6 +207,77 @@ export const Dashboard: React.FC<DashboardProps> = ({
               <span>{i18n.t('market_rates_title')}</span>
             </button>
           </div>
+        </div>
+      </div>
+
+      {/* PROMINENT REFERRAL REWARDS BANNER: INVITE. EARN. UNLOCK. */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900/40 via-cyan-900/30 to-slate-900/80 border border-cyan-500/30 p-5 sm:p-6 shadow-xl space-y-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          <div className="space-y-1.5 max-w-xl">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-500/10 border border-cyan-500/30 text-cyan-600 dark:text-cyan-300 text-xs font-black uppercase tracking-wider">
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>INVITE. EARN. UNLOCK.</span>
+            </div>
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 dark:text-white font-['Outfit']">
+              Refer colleagues and unlock <span className="text-gradient-fiq">Free Lifetime Access</span>
+            </h3>
+            <p className="text-xs text-slate-600 dark:text-slate-300 leading-relaxed">
+              Every qualified referral earns you cumulative milestones. No credit card required, 100% auditable.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              onClick={() => onOpenReferral?.()}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-cyan-400 to-blue-600 hover:from-cyan-300 hover:to-blue-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-cyan-500/25 transition-all hover:scale-[1.02] active:scale-[0.98] cursor-pointer"
+            >
+              <span>Invite Members →</span>
+              <ArrowUpRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* 3 Milestone Columns & Live Progress */}
+        <div className="pt-2 border-t border-slate-200 dark:border-slate-800/80 grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <div className="p-3 rounded-xl bg-white/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400">Milestone 1</span>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">3 Referrals</div>
+            </div>
+            <span className="text-xs font-extrabold text-emerald-600 dark:text-emerald-400 bg-emerald-500/10 px-2 py-0.5 rounded-lg border border-emerald-500/20">
+              → 3 Months Free
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400">Milestone 2</span>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">5 Referrals</div>
+            </div>
+            <span className="text-xs font-extrabold text-cyan-600 dark:text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded-lg border border-cyan-500/20">
+              → 6 Months Free
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-white/70 dark:bg-slate-950/60 border border-slate-200 dark:border-slate-800/80 flex items-center justify-between">
+            <div>
+              <span className="text-[10px] uppercase font-bold text-slate-400">Milestone 3</span>
+              <div className="text-xs font-bold text-slate-800 dark:text-slate-200">12 Referrals</div>
+            </div>
+            <span className="text-xs font-extrabold text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-lg border border-amber-500/20">
+              → Lifetime Free
+            </span>
+          </div>
+        </div>
+
+        {/* User Mini Progress Bar */}
+        <div className="flex items-center justify-between text-xs pt-1 text-slate-500 dark:text-slate-400">
+          <span className="font-semibold">
+            Your progress: <strong className="text-slate-900 dark:text-white">{referralProgress.currentCount}</strong> / {referralProgress.nextThreshold || 12} referrals
+          </span>
+          <span className="font-mono text-[11px] text-cyan-600 dark:text-cyan-400">
+            {referralProgress.isLifetime ? '🏆 Lifetime Tier Active' : `Next: ${referralProgress.nextReward}`}
+          </span>
         </div>
       </div>
 

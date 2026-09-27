@@ -21,13 +21,15 @@ import {
   User, 
   Settings, 
   LogOut,
-  ExternalLink
+  ExternalLink,
+  Gift
 } from 'lucide-react';
-import type { CurrencyCode, LanguageCode } from '../types';
+import type { CurrencyCode, LanguageCode, User as UserType } from '../types';
 import { CURRENCY_MAP, currencyService } from '../services/currencyService';
 import { LANGUAGES, i18n } from '../services/i18n';
 import { marketRateService } from '../services/marketRateService';
 import { themeService, type ThemeMode, type ResolvedTheme } from '../services/themeService';
+import { MembershipBadge } from './MembershipBadge';
 import logoImg from '../assets/logo.png';
 
 interface HeaderProps {
@@ -40,6 +42,11 @@ interface HeaderProps {
   onSync: () => void;
   isSyncing: boolean;
   onShowSplash?: () => void;
+  currentUser?: UserType | null;
+  onOpenAuth?: () => void;
+  onOpenProfile?: () => void;
+  onOpenReferral?: () => void;
+  onSignOut?: () => void;
 }
 
 interface NotificationItem {
@@ -61,6 +68,11 @@ export const Header: React.FC<HeaderProps> = ({
   onSync,
   isSyncing,
   onShowSplash,
+  currentUser,
+  onOpenAuth,
+  onOpenProfile,
+  onOpenReferral,
+  onSignOut,
 }) => {
   // Theme state
   const [themeMode, setThemeMode] = useState<ThemeMode>(themeService.getMode());
@@ -638,105 +650,175 @@ export const Header: React.FC<HeaderProps> = ({
               )}
             </div>
 
-            {/* 5. User Profile Menu */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setProfileDropdownOpen(!profileDropdownOpen);
-                  setLangDropdownOpen(false);
-                  setCurrDropdownOpen(false);
-                  setThemeDropdownOpen(false);
-                  setNotifDropdownOpen(false);
-                }}
-                className={`flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-xl border transition-all duration-150 cursor-pointer ${
-                  resolvedTheme === 'dark'
-                    ? 'bg-[#0B1220] hover:bg-slate-800 border-[#1F2937] text-slate-200'
-                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800 shadow-sm'
-                }`}
-              >
-                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#0052ff] to-[#67E8F9] flex items-center justify-center text-white font-bold text-xs shadow-inner">
-                  DT
-                </div>
-                <div className="hidden xl:block text-left">
-                  <div className="text-xs font-bold leading-tight truncate max-w-[90px]">Dilnawaz Tex</div>
-                  <div className="text-[10px] text-emerald-500 font-semibold leading-none">Enterprise</div>
-                </div>
-                <ChevronDown className="w-3 h-3 opacity-60 hidden sm:block" />
-              </button>
+            {/* 4.5 Invite & Earn Button with Gift Icon */}
+            <button
+              onClick={() => onOpenReferral?.()}
+              className={`hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-xl border transition-all duration-150 cursor-pointer ${
+                resolvedTheme === 'dark'
+                  ? 'bg-gradient-to-r from-cyan-950/40 to-blue-950/40 hover:bg-slate-800 border-cyan-500/30 text-cyan-300'
+                  : 'bg-gradient-to-r from-cyan-50 to-blue-50 hover:bg-blue-100/50 border-cyan-300 text-blue-700 shadow-sm'
+              }`}
+              title="Invite Members & Unlock Rewards"
+            >
+              <Gift className="w-3.5 h-3.5 text-cyan-400 animate-bounce" />
+              <span className="text-xs font-extrabold font-['Outfit']">Invite & Earn</span>
+              {currentUser && (
+                <span className="text-[10px] font-mono font-bold px-1.5 py-0.2 rounded-full bg-cyan-500/20 text-cyan-400 border border-cyan-500/30 ml-0.5">
+                  {currentUser.qualifiedReferralsCount || 0}/12
+                </span>
+              )}
+            </button>
 
-              {profileDropdownOpen && (
-                <div className={`absolute right-0 mt-2 w-64 rounded-2xl border shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ${
-                  resolvedTheme === 'dark' ? 'bg-[#111827] border-[#1F2937]' : 'bg-white border-slate-200'
-                }`}>
-                  <div className="p-2.5 border-b border-slate-200 dark:border-slate-800 mb-1">
-                    <div className="flex items-center gap-2.5">
-                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#0052ff] to-[#67E8F9] flex items-center justify-center text-white font-extrabold text-sm">
-                        DT
-                      </div>
-                      <div>
-                        <div className={`text-xs font-bold ${resolvedTheme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
-                          Dilnawaz Textile Group
-                        </div>
-                        <div className="text-[11px] text-slate-400">admin@dilnawaztex.com</div>
-                      </div>
+            {/* 5. User Profile Menu or Sign In */}
+            {!currentUser ? (
+              <button
+                onClick={() => onOpenAuth?.()}
+                className="flex items-center gap-2 px-3.5 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs shadow-md transition-all cursor-pointer"
+              >
+                <span>Continue with Google</span>
+              </button>
+            ) : (
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    setProfileDropdownOpen(!profileDropdownOpen);
+                    setLangDropdownOpen(false);
+                    setCurrDropdownOpen(false);
+                    setThemeDropdownOpen(false);
+                    setNotifDropdownOpen(false);
+                  }}
+                  className={`flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-xl border transition-all duration-150 cursor-pointer ${
+                    resolvedTheme === 'dark'
+                      ? 'bg-[#0B1220] hover:bg-slate-800 border-[#1F2937] text-slate-200'
+                      : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800 shadow-sm'
+                  }`}
+                >
+                  <img
+                    src={currentUser.avatar}
+                    alt={currentUser.name}
+                    className="w-7 h-7 rounded-lg object-cover shadow-inner shrink-0"
+                  />
+                  <div className="hidden xl:block text-left">
+                    <div className="text-xs font-bold leading-tight truncate max-w-[90px]">
+                      {currentUser.name}
+                    </div>
+                    <div className="text-[10px] text-cyan-500 font-semibold leading-none truncate max-w-[90px]">
+                      {currentUser.membershipType.replace('_', ' ')}
                     </div>
                   </div>
+                  <ChevronDown className="w-3 h-3 opacity-60 hidden sm:block" />
+                </button>
 
-                  <div className="space-y-0.5 text-xs">
-                    <button
-                      onClick={() => {
-                        onTabChange('admin');
-                        setProfileDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
-                        resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      <User className="w-3.5 h-3.5 text-cyan-500" />
-                      <span>Organization & Team</span>
-                    </button>
+                {profileDropdownOpen && (
+                  <div className={`absolute right-0 mt-2 w-72 rounded-2xl border shadow-2xl p-2.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                    resolvedTheme === 'dark' ? 'bg-[#111827] border-[#1F2937]' : 'bg-white border-slate-200'
+                  }`}>
+                    <div className="p-2.5 border-b border-slate-200 dark:border-slate-800 mb-1.5">
+                      <div className="flex items-center gap-2.5">
+                        <img
+                          src={currentUser.avatar}
+                          alt={currentUser.name}
+                          className="w-10 h-10 rounded-xl object-cover shadow-sm"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <div className={`text-xs font-bold truncate ${resolvedTheme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                            {currentUser.name}
+                          </div>
+                          <div className="text-[11px] text-slate-400 truncate">{currentUser.email}</div>
+                          <div className="mt-1">
+                            <MembershipBadge type={currentUser.membershipType} size="sm" />
+                          </div>
+                        </div>
+                      </div>
+                    </div>
 
-                    <button
-                      onClick={() => {
-                        onTabChange('settings');
-                        setProfileDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
-                        resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
-                      }`}
-                    >
-                      <Settings className="w-3.5 h-3.5 text-indigo-500" />
-                      <span>Costing Engine Preferences</span>
-                    </button>
-
-                    {onShowSplash && (
+                    <div className="space-y-0.5 text-xs">
                       <button
                         onClick={() => {
-                          onShowSplash();
+                          onOpenProfile?.();
                           setProfileDropdownOpen(false);
                         }}
                         className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
                           resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
                         }`}
                       >
-                        <ExternalLink className="w-3.5 h-3.5 text-emerald-500" />
-                        <span>Replay Brand Intro</span>
+                        <User className="w-3.5 h-3.5 text-cyan-500" />
+                        <span>Member Profile & Rewards</span>
                       </button>
-                    )}
 
-                    <div className="pt-1 mt-1 border-t border-slate-200 dark:border-slate-800">
                       <button
-                        onClick={() => setProfileDropdownOpen(false)}
-                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        onClick={() => {
+                          onOpenReferral?.();
+                          setProfileDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                          resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
                       >
-                        <LogOut className="w-3.5 h-3.5" />
-                        <span>Sign Out</span>
+                        <Gift className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Invite & Earn Program</span>
                       </button>
+
+                      {currentUser.role === 'admin' && (
+                        <button
+                          onClick={() => {
+                            onTabChange('admin');
+                            setProfileDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                            resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <Settings className="w-3.5 h-3.5 text-indigo-500" />
+                          <span>Admin Central Dashboard</span>
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => {
+                          onTabChange('settings');
+                          setProfileDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                          resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <Settings className="w-3.5 h-3.5 text-slate-400" />
+                        <span>Preferences & Settings</span>
+                      </button>
+
+                      {onShowSplash && (
+                        <button
+                          onClick={() => {
+                            onShowSplash();
+                            setProfileDropdownOpen(false);
+                          }}
+                          className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                            resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                          }`}
+                        >
+                          <ExternalLink className="w-3.5 h-3.5 text-emerald-500" />
+                          <span>Replay Brand Intro</span>
+                        </button>
+                      )}
+
+                      <div className="pt-1 mt-1 border-t border-slate-200 dark:border-slate-800">
+                        <button
+                          onClick={() => {
+                            onSignOut?.();
+                            setProfileDropdownOpen(false);
+                          }}
+                          className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                        >
+                          <LogOut className="w-3.5 h-3.5" />
+                          <span>Sign Out</span>
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              )}
-            </div>
+                )}
+              </div>
+            )}
 
             {/* 6. Mobile Hamburger Toggle */}
             <div className="lg:hidden">

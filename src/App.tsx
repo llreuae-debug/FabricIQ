@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
-import type { CurrencyCode, LanguageCode, SavedEstimate } from './types';
+import type { CurrencyCode, LanguageCode, SavedEstimate, User } from './types';
 import { currencyService } from './services/currencyService';
 import { i18n, LANGUAGES } from './services/i18n';
 import { marketRateService } from './services/marketRateService';
+import { authService } from './services/authService';
+import { referralService, type MilestoneNotification } from './services/referralService';
 import { Header } from './components/Header';
 import { Dashboard } from './components/Dashboard';
 import { Calculator } from './components/Calculator';
@@ -13,7 +15,10 @@ import { AdminPanel } from './components/AdminPanel';
 import { Settings } from './components/Settings';
 import { AutoDetectModal } from './components/AutoDetectModal';
 import { SplashScreen } from './components/SplashScreen';
-import { ShieldCheck } from 'lucide-react';
+import { GoogleAuthModal } from './components/GoogleAuthModal';
+import { ReferralModal } from './components/ReferralModal';
+import { UserProfileModal } from './components/UserProfileModal';
+import { ShieldCheck, Sparkles, X, Gift } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
 export function App() {
@@ -22,6 +27,15 @@ export function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [showSplash, setShowSplash] = useState<boolean>(true);
+
+  // Authentication & Membership State
+  const [currentUser, setCurrentUser] = useState<User | null>(authService.getCurrentUser());
+  const [authModalOpen, setAuthModalOpen] = useState<boolean>(false);
+  const [profileModalOpen, setProfileModalOpen] = useState<boolean>(false);
+  const [referralModalOpen, setReferralModalOpen] = useState<boolean>(false);
+
+  // Celebration Milestone Notification Banner
+  const [celebrationNotif, setCelebrationNotif] = useState<MilestoneNotification | null>(null);
 
   // Auto-detect modal state on initial launch
   const [autoDetectOpen, setAutoDetectOpen] = useState<boolean>(false);
@@ -35,6 +49,23 @@ export function App() {
   const [toolsActiveId, setToolsActiveId] = useState<string | undefined>();
 
   useEffect(() => {
+    // Subscribe to auth state changes
+    const unsubAuth = authService.subscribe((u) => {
+      setCurrentUser(u);
+    });
+
+    // Subscribe to milestone celebration notifications
+    const unsubNotif = referralService.subscribeNotifications((notif) => {
+      setCelebrationNotif(notif);
+    });
+
+    // Check URL parameters for referral code
+    const refCode = referralService.captureFromUrl();
+    if (refCode && !authService.getCurrentUser()) {
+      // Prompt sign in if user came through a referral link
+      setAuthModalOpen(true);
+    }
+
     const hasSeenModal = localStorage.getItem('fabriciq_has_seen_detect_v2');
     if (!hasSeenModal) {
       const curDetect = currencyService.detectInitialCurrency();
@@ -44,12 +75,16 @@ export function App() {
       setSuggestedCurrency(curDetect.suggestedCurrency);
       setSuggestedLang(langDetect.suggestedLang);
       setDetectReason(`${curDetect.reason} • ${langDetect.reason}`);
-      // Auto detect modal will show after splash completes
     }
 
     const config = LANGUAGES[currentLang];
     document.documentElement.setAttribute('dir', config.dir);
     document.documentElement.setAttribute('lang', config.code);
+
+    return () => {
+      unsubAuth();
+      unsubNotif();
+    };
   }, [currentLang]);
 
   const handleSplashComplete = () => {
@@ -127,6 +162,62 @@ export function App() {
         />
       )}
 
+      {/* Google OAuth & Auth Modal */}
+      <GoogleAuthModal
+        isOpen={authModalOpen}
+        onClose={() => setAuthModalOpen(false)}
+        onSuccess={(_u) => {
+          setAuthModalOpen(false);
+        }}
+      />
+
+      {/* User Profile & Membership Modal */}
+      <UserProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        user={currentUser}
+        onSignOut={() => authService.signOut()}
+        onOpenReferral={() => setReferralModalOpen(true)}
+        onOpenAuth={() => setAuthModalOpen(true)}
+      />
+
+      {/* Referral Rewards Modal */}
+      <ReferralModal
+        isOpen={referralModalOpen}
+        onClose={() => setReferralModalOpen(false)}
+        currentUser={currentUser}
+        onOpenAuth={() => setAuthModalOpen(true)}
+      />
+
+      {/* Milestone Celebration Banner */}
+      {celebrationNotif && (
+        <div className="bg-gradient-to-r from-blue-600 via-cyan-500 to-emerald-500 text-slate-950 px-4 py-3 shadow-xl flex items-center justify-between gap-3 text-xs sm:text-sm font-bold animate-in slide-in-from-top duration-300 z-50">
+          <div className="max-w-7xl mx-auto flex items-center gap-2.5 flex-1">
+            <Sparkles className="w-5 h-5 shrink-0 text-white animate-spin" />
+            <div className="text-white">
+              <span className="font-extrabold font-['Outfit']">{celebrationNotif.title}</span>
+              <span className="mx-2 hidden sm:inline">•</span>
+              <span className="font-medium text-blue-50 text-xs">{celebrationNotif.message}</span>
+            </div>
+            <button
+              onClick={() => {
+                setCelebrationNotif(null);
+                setReferralModalOpen(true);
+              }}
+              className="ml-auto px-3 py-1 rounded-lg bg-slate-950 hover:bg-slate-900 text-cyan-300 text-xs font-extrabold shadow-md shrink-0 cursor-pointer"
+            >
+              View Rewards →
+            </button>
+          </div>
+          <button
+            onClick={() => setCelebrationNotif(null)}
+            className="p-1 rounded-full text-white/80 hover:text-white hover:bg-black/10 shrink-0 cursor-pointer"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
       {/* Global Header */}
       <Header
         currentLang={currentLang}
@@ -138,6 +229,11 @@ export function App() {
         onSync={handleSyncMarketRates}
         isSyncing={isSyncing}
         onShowSplash={() => setShowSplash(true)}
+        currentUser={currentUser}
+        onOpenAuth={() => setAuthModalOpen(true)}
+        onOpenProfile={() => setProfileModalOpen(true)}
+        onOpenReferral={() => setReferralModalOpen(true)}
+        onSignOut={() => authService.signOut()}
       />
 
       {/* Main Application Content Container */}
@@ -149,6 +245,7 @@ export function App() {
             onNavigateToSavedEstimates={() => setActiveTab('saved_estimates')}
             onNavigateToMarketRates={() => setActiveTab('market_rates')}
             onNavigateToTools={handleNavigateToTools}
+            onOpenReferral={() => setReferralModalOpen(true)}
           />
         )}
 
@@ -214,12 +311,18 @@ export function App() {
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
+            <button
+              onClick={() => setReferralModalOpen(true)}
+              className="flex items-center gap-1 text-cyan-600 dark:text-cyan-400 font-bold hover:underline cursor-pointer"
+            >
+              <Gift className="w-3.5 h-3.5" />
+              Invite & Earn Program
+            </button>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
             <span className="flex items-center gap-1 text-emerald-500 font-medium">
               <ShieldCheck className="w-3.5 h-3.5" />
               Verified Textile Index Feeds
             </span>
-            <span className="text-slate-300 dark:text-slate-700">|</span>
-            <span className="text-slate-500 dark:text-slate-400">ASTM D3776 & ISO Textile Engineering Compliant</span>
           </div>
         </div>
       </footer>

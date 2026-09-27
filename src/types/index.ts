@@ -310,3 +310,73 @@ export interface Supplier {
   reliabilityScore: number;
   lastRateUpdate: string;
 }
+
+// -------------------------------------------------------------
+// Membership & Authentication Data Models
+// -------------------------------------------------------------
+export type MembershipType = 'FREE' | 'PRO_3_MONTHS' | 'PRO_6_MONTHS' | 'LIFETIME';
+export type MembershipStatus = 'active' | 'suspended' | 'expired';
+
+export interface RewardUnlock {
+  id: string;
+  userId: string;
+  rewardType: MembershipType;
+  referralThreshold: number; // 3, 5, 12
+  grantedAt: string;
+  expiryAt: string | null; // null for LIFETIME and default FREE
+  status: 'active' | 'superseded' | 'revoked';
+  grantedBy: 'system' | 'admin';
+  notes?: string;
+}
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  googleId?: string;
+  avatar: string;
+  createdAt: string;
+  lastLogin: string;
+  role: 'user' | 'admin';
+  membershipType: MembershipType;
+  membershipStatus: MembershipStatus;
+  membershipStart: string;
+  membershipExpiry: string | null; // null for LIFETIME & FREE
+  referralCode: string;
+  referredBy?: string; // Referral code of the referrer
+  referredUsersCount: number; // Total signups with their code
+  qualifiedReferralsCount: number; // Validated & qualified referrals count
+  rewardsUnlocked: RewardUnlock[];
+  isSuspended?: boolean;
+  notes?: string;
+}
+
+export type ReferralStatus = 'pending' | 'qualified' | 'suspicious' | 'rejected';
+
+export interface Referral {
+  id: string;
+  referrerUserId: string;
+  referrerCode: string;
+  referredUserId: string;
+  referredUserName: string;
+  referredUserEmail: string;
+  status: ReferralStatus;
+  flagReason?: string;
+  qualifiedAt?: string;
+  createdAt: string;
+  rewardApplied?: boolean;
+}
+
+export interface AdminAuditLog {
+  id: string;
+  adminId: string;
+  adminName: string;
+  action: string;
+  targetUserId: string;
+  targetUserName: string;
+  oldValue: string;
+  newValue: string;
+  reason?: string;
+  timestamp: string;
+}
+
