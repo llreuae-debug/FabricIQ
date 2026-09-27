@@ -8,32 +8,51 @@ import {
   FileCheck, 
   Sliders, 
   Settings2, 
-  Truck, 
   Percent, 
-  Sparkles,
-  Info,
-  ChevronDown,
-  ChevronUp,
-  Boxes
+  Sparkles, 
+  Info, 
+  ChevronDown, 
+  ChevronUp, 
+  Boxes, 
+  Palette, 
+  Package, 
+  CheckCircle2, 
+  FileSpreadsheet, 
+  Plus, 
+  Trash2, 
+  RefreshCw, 
+  Eye,
+  BarChart3
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
   PieChart, 
   Pie, 
   Cell, 
-  Tooltip as ChartTooltip 
+  Tooltip as ChartTooltip,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid
 } from 'recharts';
 import type { 
   CurrencyCode, 
   FabricCalculationInput, 
-  FabricIQCalculationResult 
+  FabricIQCalculationResult, 
+  YarnCountSystem, 
+  PrintingColorItem 
 } from '../types';
 import { 
   FABRIC_PRESETS, 
   calculateFabricIQCost,
   DEFAULT_PROCESSING_OPERATIONS,
   DEFAULT_DETAILED_DYEING,
-  DEFAULT_DETAILED_FINISHING
+  DEFAULT_DETAILED_FINISHING,
+  DEFAULT_COLOR_PRINTING,
+  DEFAULT_PACKAGING,
+  DEFAULT_LOGISTICS,
+  DEFAULT_YIELD_STAGES
 } from '../services/calculationEngine';
 import { currencyService } from '../services/currencyService';
 import { marketRateService } from '../services/marketRateService';
@@ -46,7 +65,7 @@ interface CalculatorProps {
   onEstimateSaved?: () => void;
 }
 
-const PIE_COLORS = ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6'];
+const PIE_COLORS = ['#6366f1', '#3b82f6', '#06b6d4', '#10b981', '#f59e0b', '#ec4899', '#8b5cf6', '#14b8a6', '#f43f5e'];
 
 export const Calculator: React.FC<CalculatorProps> = ({
   currentCurrency,
@@ -57,12 +76,16 @@ export const Calculator: React.FC<CalculatorProps> = ({
 
   const [selectedPresetId, setSelectedPresetId] = useState<string>(initialPresetId || 'sheeting-20x20');
   const [showDetailedDyeing, setShowDetailedDyeing] = useState<boolean>(false);
-  const [showDetailedFinishing, setShowDetailedFinishing] = useState<boolean>(false);
-  const [activeTabSection, setActiveTabSection] = useState<'physical' | 'yield' | 'rates' | 'processing' | 'commercial'>('physical');
+  const [selectedAuditStep, setSelectedAuditStep] = useState<number | null>(null);
+  
+  const [activeTabSection, setActiveTabSection] = useState<
+    'physical' | 'yield' | 'rates' | 'processing' | 'printing' | 'logistics' | 'commercial' | 'audit'
+  >('physical');
 
   const [inputs, setInputs] = useState<FabricCalculationInput>({
     estimateName: 'Standard Commercial Export Quote',
     customerName: 'EuroTex Sourcing BV',
+    fabricStructure: 'woven',
     fabricType: 'Standard Sheeting 20x20 / 60x60 (63")',
     finishedWidthInches: 63,
     finishedLengthMeters: 25000,
@@ -70,33 +93,74 @@ export const Calculator: React.FC<CalculatorProps> = ({
     directGreyRatePerMeter: 145,
     directGreyRatePerKg: 580,
     directGSM: 150,
+
+    // Yarn Count Systems
+    warpCountSystem: 'Ne',
+    weftCountSystem: 'Ne',
     warpCountNe: 20,
     weftCountNe: 20,
+
+    // Woven physical specs
     epi: 60,
     ppi: 60,
+    reedCountDents: 60,
+    reedWidthInches: 67,
     warpCrimpPct: 6.0,
     weftCrimpPct: 4.5,
     warpWastePct: 1.0,
     weftWastePct: 1.0,
+
+    // Machine economics
+    loomRpmSpeed: 550,
+    loomEfficiencyPct: 88,
+    loomHourlyCost: 420,
+
+    // Knitted specs
+    knittingStitchLengthMm: 2.8,
+    knittingCoursesPerCm: 16,
+    knittingWalesPerCm: 12,
+    knittingGauge: 24,
+    knittingRatePerKg: 65,
+    knittingEfficiencyPct: 92,
+    knittingWastePct: 2.5,
+
+    // Yarn rates
     warpYarnRate: 2850,
     warpYarnRateUnit: '10lbs',
     weftYarnRate: 2850,
     weftYarnRateUnit: '10lbs',
+
+    // Weaving
     weavingCostMethod: 'per_pick',
     weavingRate: 0.48,
     sizingCostPerMeter: 8.50,
+    greyInspectionCostPerMeter: 1.20,
     otherGreyManufacturingCostPerMeter: 0,
+
+    // Yield stages
     weavingLossPct: 2.0,
     wetProcessingLossPct: 3.5,
     finishingLossPct: 1.5,
+    yieldLossStages: { ...DEFAULT_YIELD_STAGES },
+
+    // Modular Operations
     processingOperations: DEFAULT_PROCESSING_OPERATIONS,
     detailedDyeing: DEFAULT_DETAILED_DYEING,
     detailedFinishing: DEFAULT_DETAILED_FINISHING,
+    
+    // Color-wise Printing
+    colorPrinting: { ...DEFAULT_COLOR_PRINTING },
     printingCostPerMeter: 0,
     auxChemicalCostPerMeter: 2.50,
+
+    // Packaging & Logistics
+    packaging: { ...DEFAULT_PACKAGING },
+    logistics: { ...DEFAULT_LOGISTICS },
     transportMethod: 'by_weight',
     transportRatePerKg: 14.00,
     fixedTransportTotal: 0,
+
+    // Commercial & Overhead
     overheadMethod: 'percentage',
     overheadPct: 3.5,
     fixedOverheadTotal: 0,
@@ -138,11 +202,14 @@ export const Calculator: React.FC<CalculatorProps> = ({
 
     setInputs((prev) => ({
       ...prev,
+      fabricStructure: 'woven',
       fabricType: preset.name,
       estimateName: `${preset.name} Quote`,
       finishedWidthInches: preset.widthInches,
       warpCountNe: preset.warpCount,
       weftCountNe: preset.weftCount,
+      warpCountSystem: 'Ne',
+      weftCountSystem: 'Ne',
       epi: preset.epi,
       ppi: preset.ppi,
       warpCrimpPct: preset.warpCrimpPct,
@@ -208,6 +275,63 @@ export const Calculator: React.FC<CalculatorProps> = ({
     }));
   };
 
+  // Color Printing Handlers
+  const addPrintingColor = () => {
+    const newColor: PrintingColorItem = {
+      id: `col-${Date.now()}`,
+      colorName: `Color ${((inputs.colorPrinting?.colors?.length || 0) + 1)}`,
+      hexCode: '#3B82F6',
+      consumptionGramsPerMeter: 3.5,
+      inkRatePerKg: 1500,
+      costPerMeter: 5.25,
+    };
+    setInputs((prev) => ({
+      ...prev,
+      colorPrinting: {
+        ...(prev.colorPrinting || DEFAULT_COLOR_PRINTING),
+        enabled: true,
+        colors: [...(prev.colorPrinting?.colors || []), newColor],
+        screenCount: (prev.colorPrinting?.colors?.length || 0) + 1,
+      },
+    }));
+  };
+
+  const updatePrintingColor = (id: string, field: keyof PrintingColorItem, value: any) => {
+    setInputs((prev) => {
+      const colors = (prev.colorPrinting?.colors || []).map((c) => {
+        if (c.id === id) {
+          const updated = { ...c, [field]: value };
+          if (field === 'consumptionGramsPerMeter' || field === 'inkRatePerKg') {
+            updated.costPerMeter = (updated.consumptionGramsPerMeter / 1000) * updated.inkRatePerKg;
+          }
+          return updated;
+        }
+        return c;
+      });
+      return {
+        ...prev,
+        colorPrinting: {
+          ...(prev.colorPrinting || DEFAULT_COLOR_PRINTING),
+          colors,
+        },
+      };
+    });
+  };
+
+  const removePrintingColor = (id: string) => {
+    setInputs((prev) => {
+      const colors = (prev.colorPrinting?.colors || []).filter((c) => c.id !== id);
+      return {
+        ...prev,
+        colorPrinting: {
+          ...(prev.colorPrinting || DEFAULT_COLOR_PRINTING),
+          colors,
+          screenCount: Math.max(1, colors.length),
+        },
+      };
+    });
+  };
+
   const handleSaveEstimate = () => {
     const saved = estimateService.saveEstimate(inputs, results, 'quoted', saveNotes);
     setSaveSuccessMsg(`Saved Ref: ${saved.referenceNo}`);
@@ -237,13 +361,22 @@ export const Calculator: React.FC<CalculatorProps> = ({
 
   const pieData = [
     { name: 'Yarn', value: results.yarn_cost },
-    { name: 'Weaving & Sizing', value: results.weaving_cost + results.sizing_cost },
+    { name: 'Weaving / Knit', value: results.weaving_cost + results.sizing_cost + results.grey_inspection_cost },
     { name: 'Direct Grey', value: inputs.costingMethod.startsWith('direct') ? results.grey_fabric_cost : 0 },
     { name: 'Processing', value: results.processing_cost },
-    { name: 'Dyeing & Finishing', value: results.dyeing_cost + results.finishing_cost },
-    { name: 'Process Wastage', value: results.wastage_cost },
-    { name: 'Freight & Overhead', value: results.transport_cost + results.overhead_cost },
+    { name: 'Dyeing', value: results.dyeing_cost },
+    { name: 'Color Printing', value: results.colorPrintingReport?.totalPrintingCostPerMeter || 0 },
+    { name: 'Finishing', value: results.finishing_cost },
+    { name: 'Packaging', value: results.packaging_cost },
+    { name: 'Logistics', value: results.transport_cost },
+    { name: 'Overhead', value: results.overhead_cost },
   ].filter((d) => d.value > 0);
+
+  const waterfallData = results.costWaterfall?.map((item) => ({
+    name: item.stageName,
+    cost: Number(item.stageCostPerMeter.toFixed(2)),
+    cumulative: Number(item.cumulativeCostPerMeter.toFixed(2)),
+  })) || [];
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -256,19 +389,28 @@ export const Calculator: React.FC<CalculatorProps> = ({
             </div>
             <div>
               <h2 className="text-xl font-bold text-white font-['Outfit'] flex items-center gap-2">
-                <span>FabricIQ Deterministic Costing Engine</span>
-                <span className="text-[10px] font-mono px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">
-                  v2.0 Auditable
+                <span>FabricIQ Pro — Deterministic Costing Engine</span>
+                <span className="text-[10px] font-mono px-2.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold flex items-center gap-1">
+                  <CheckCircle2 className="w-3 h-3" />
+                  <span>{results.estimateConfidence || 'VERIFIED INPUTS (100%)'}</span>
                 </span>
               </h2>
             </div>
           </div>
           <p className="text-xs text-slate-400">
-            Engineered physical consumption formulas separated cleanly from commercial cost components & yield models.
+            Manufacturing-grade mathematical costing: <strong>Input → Formula → Intermediate Result → Final Cost</strong>
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => setActiveTabSection('audit')}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-indigo-300 text-xs font-semibold border border-indigo-500/30 transition-colors"
+          >
+            <Eye className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Formula Audit ({results.auditSteps?.length || 0} Steps)</span>
+          </button>
+
           <button
             onClick={() => setSaveModalOpen(true)}
             className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
@@ -287,7 +429,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
         </div>
       </div>
 
-      {/* Preset Picker & Costing Mode Header */}
+      {/* Preset Picker & Structure Selector Header */}
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
         <div className="md:col-span-4 flex items-center gap-2">
           <Layers className="w-4 h-4 text-indigo-400" />
@@ -305,52 +447,79 @@ export const Calculator: React.FC<CalculatorProps> = ({
           </select>
         </div>
 
-        {/* Costing Method Selector */}
+        {/* Structure Selector (Woven vs Knitted) */}
         <div className="md:col-span-8 flex flex-wrap items-center justify-end gap-2">
-          <span className="text-xs font-semibold text-slate-400">Method:</span>
+          <span className="text-xs font-semibold text-slate-400">Structure:</span>
+          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
+            <button
+              onClick={() => setInputs({ ...inputs, fabricStructure: 'woven' })}
+              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+                inputs.fabricStructure === 'woven'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Woven Fabric (Loom)
+            </button>
+            <button
+              onClick={() => setInputs({ ...inputs, fabricStructure: 'knitted' })}
+              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+                inputs.fabricStructure === 'knitted'
+                  ? 'bg-indigo-600 text-white shadow-sm'
+                  : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              Knitted Fabric (Circular/Flat)
+            </button>
+          </div>
+
+          <span className="text-xs font-semibold text-slate-400 ml-2">Method:</span>
           <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
             <button
               onClick={() => setInputs({ ...inputs, costingMethod: 'engineered' })}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
                 inputs.costingMethod === 'engineered'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              1. Full Yarn & Weaving Engineering
+              Physical Engineering
             </button>
             <button
               onClick={() => setInputs({ ...inputs, costingMethod: 'direct_grey_meter' })}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
                 inputs.costingMethod === 'direct_grey_meter'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              2. Known Grey Rate/Meter
+              Grey Rate/m
             </button>
             <button
               onClick={() => setInputs({ ...inputs, costingMethod: 'direct_grey_kg' })}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
+              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
                 inputs.costingMethod === 'direct_grey_kg'
                   ? 'bg-indigo-600 text-white shadow-sm'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              3. Known Grey Rate/Kg
+              Grey Rate/kg
             </button>
           </div>
         </div>
       </div>
 
-      {/* Navigation Sub-Tabs for Step-by-Step Flow */}
+      {/* Navigation Sub-Tabs for Step-by-Step Deterministic Flow */}
       <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-800">
         {[
-          { id: 'physical', label: '1. Physical Specifications', icon: Sliders },
-          { id: 'yield', label: '2. Yield & Process Losses', icon: Boxes },
-          { id: 'rates', label: '3. Yarn & Weaving Rates', icon: Settings2 },
+          { id: 'physical', label: '1. Physical Specs', icon: Sliders },
+          { id: 'yield', label: '2. Multi-Stage Yield', icon: Boxes },
+          { id: 'rates', label: '3. Yarn & Weaving/Knit', icon: Settings2 },
           { id: 'processing', label: '4. Processing & Dyeing', icon: Sparkles },
-          { id: 'commercial', label: '5. Logistics, Margin & Tax', icon: Percent },
+          { id: 'printing', label: '5. Color-Wise Printing', icon: Palette },
+          { id: 'logistics', label: '6. Packaging & Logistics', icon: Package },
+          { id: 'commercial', label: '7. Margin & Tax', icon: Percent },
+          { id: 'audit', label: '8. Formula Audit & Waterfall', icon: FileSpreadsheet },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTabSection === tab.id;
@@ -358,7 +527,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTabSection(tab.id as any)}
-              className={`flex items-center gap-2 px-4 py-2.5 rounded-t-xl font-semibold text-xs transition-all whitespace-nowrap border-b-2 ${
+              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-t-xl font-semibold text-xs transition-all whitespace-nowrap border-b-2 ${
                 isActive
                   ? 'border-indigo-500 bg-slate-900/90 text-indigo-300'
                   : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
@@ -380,8 +549,11 @@ export const Calculator: React.FC<CalculatorProps> = ({
             <div className="flex items-center justify-between">
               <h3 className="text-xs font-bold text-indigo-400 uppercase tracking-wider flex items-center gap-2">
                 <FileCheck className="w-4 h-4" />
-                <span>Estimate & Customer Header</span>
+                <span>Estimate & Order Header</span>
               </h3>
+              <span className="text-[11px] font-mono text-slate-400">
+                Target: <strong>{inputs.finishedLengthMeters.toLocaleString()} Meters</strong>
+              </span>
             </div>
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
@@ -415,7 +587,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold">1</span>
-                  <span>Physical Fabric Construction Engine</span>
+                  <span>Physical Fabric Construction Engine ({inputs.fabricStructure === 'knitted' ? 'Knitted' : 'Woven'})</span>
                 </h3>
                 <span className="text-[11px] text-slate-400">
                   Weight/m: <strong className="text-indigo-400">{results.weightPerMeterKg} kg/m</strong>
@@ -423,117 +595,268 @@ export const Calculator: React.FC<CalculatorProps> = ({
               </div>
 
               {inputs.costingMethod === 'engineered' ? (
-                <>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Finished Width (Inches)
-                      </label>
-                      <input
-                        type="number"
-                        value={inputs.finishedWidthInches}
-                        onChange={(e) => setInputs({ ...inputs, finishedWidthInches: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
+                inputs.fabricStructure === 'knitted' ? (
+                  /* Knitted Fabric Engine */
+                  <div className="space-y-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Finished Width (Inches)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.finishedWidthInches}
+                          onChange={(e) => setInputs({ ...inputs, finishedWidthInches: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Finished Length (m)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.finishedLengthMeters}
+                          onChange={(e) => setInputs({ ...inputs, finishedLengthMeters: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Stitch Length (mm)
+                        </label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={inputs.knittingStitchLengthMm || 2.8}
+                          onChange={(e) => setInputs({ ...inputs, knittingStitchLengthMm: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Machine Gauge (E)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.knittingGauge || 24}
+                          onChange={(e) => setInputs({ ...inputs, knittingGauge: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Finished Target (Meters)
-                      </label>
-                      <input
-                        type="number"
-                        value={inputs.finishedLengthMeters}
-                        onChange={(e) => setInputs({ ...inputs, finishedLengthMeters: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Warp Count (Ne)
-                      </label>
-                      <input
-                        type="number"
-                        value={inputs.warpCountNe}
-                        onChange={(e) => setInputs({ ...inputs, warpCountNe: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Weft Count (Ne)
-                      </label>
-                      <input
-                        type="number"
-                        value={inputs.weftCountNe}
-                        onChange={(e) => setInputs({ ...inputs, weftCountNe: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
-                    </div>
-                  </div>
 
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        EPI (Ends / Inch)
-                      </label>
-                      <input
-                        type="number"
-                        value={inputs.epi}
-                        onChange={(e) => setInputs({ ...inputs, epi: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        PPI (Picks / Inch)
-                      </label>
-                      <input
-                        type="number"
-                        value={inputs.ppi}
-                        onChange={(e) => setInputs({ ...inputs, ppi: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Warp Crimp %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={inputs.warpCrimpPct}
-                        onChange={(e) => setInputs({ ...inputs, warpCrimpPct: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Weft Crimp %
-                      </label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={inputs.weftCrimpPct}
-                        onChange={(e) => setInputs({ ...inputs, weftCrimpPct: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Courses / cm (CPC)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.knittingCoursesPerCm || 16}
+                          onChange={(e) => setInputs({ ...inputs, knittingCoursesPerCm: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Wales / cm (WPC)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.knittingWalesPerCm || 12}
+                          onChange={(e) => setInputs({ ...inputs, knittingWalesPerCm: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Knit Yarn Count ({inputs.warpCountSystem})
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.warpCountNe}
+                          onChange={(e) => setInputs({ ...inputs, warpCountNe: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Count System
+                        </label>
+                        <select
+                          value={inputs.warpCountSystem}
+                          onChange={(e) => setInputs({ ...inputs, warpCountSystem: e.target.value as YarnCountSystem })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100"
+                        >
+                          <option value="Ne">Ne (English Cotton)</option>
+                          <option value="Nm">Nm (Metric)</option>
+                          <option value="Tex">Tex (g/km)</option>
+                          <option value="Denier">Denier (Filament)</option>
+                          <option value="dTex">dTex</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
+                ) : (
+                  /* Woven Fabric Engine */
+                  <>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Finished Width (Inches)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.finishedWidthInches}
+                          onChange={(e) => setInputs({ ...inputs, finishedWidthInches: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Finished Target (m)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.finishedLengthMeters}
+                          onChange={(e) => setInputs({ ...inputs, finishedLengthMeters: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Warp Count System
+                        </label>
+                        <select
+                          value={inputs.warpCountSystem}
+                          onChange={(e) => setInputs({ ...inputs, warpCountSystem: e.target.value as YarnCountSystem })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100"
+                        >
+                          <option value="Ne">Ne (English)</option>
+                          <option value="Nm">Nm (Metric)</option>
+                          <option value="Tex">Tex</option>
+                          <option value="Denier">Denier</option>
+                          <option value="dTex">dTex</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Warp Count ({inputs.warpCountSystem})
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.warpCountNe}
+                          onChange={(e) => setInputs({ ...inputs, warpCountNe: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                    </div>
 
-                  {/* Physical Consumption Engine Summary Card */}
-                  <div className="p-4 rounded-xl bg-indigo-950/20 border border-indigo-500/20 space-y-2 text-xs">
-                    <div className="font-bold text-indigo-300 flex items-center gap-1.5">
-                      <Info className="w-3.5 h-3.5" />
-                      <span>Physical Consumption Output:</span>
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Weft Count System
+                        </label>
+                        <select
+                          value={inputs.weftCountSystem}
+                          onChange={(e) => setInputs({ ...inputs, weftCountSystem: e.target.value as YarnCountSystem })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100"
+                        >
+                          <option value="Ne">Ne (English)</option>
+                          <option value="Nm">Nm (Metric)</option>
+                          <option value="Tex">Tex</option>
+                          <option value="Denier">Denier</option>
+                          <option value="dTex">dTex</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Weft Count ({inputs.weftCountSystem})
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.weftCountNe}
+                          onChange={(e) => setInputs({ ...inputs, weftCountNe: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          EPI (Ends / Inch)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.epi}
+                          onChange={(e) => setInputs({ ...inputs, epi: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          PPI (Picks / Inch)
+                        </label>
+                        <input
+                          type="number"
+                          value={inputs.ppi}
+                          onChange={(e) => setInputs({ ...inputs, ppi: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
                     </div>
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-300 text-[11px]">
-                      <div>Warp Weight: <strong className="text-white">{results.warpWeightPerMeterGrams} g/m</strong></div>
-                      <div>Weft Weight: <strong className="text-white">{results.weftWeightPerMeterGrams} g/m</strong></div>
-                      <div>Grey GSM: <strong className="text-emerald-400">{results.estimatedGreyGSM} gsm</strong></div>
-                      <div>Finished GSM: <strong className="text-emerald-400">~{results.estimatedFinishedGSM} gsm</strong></div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Warp Crimp %
+                        </label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={inputs.warpCrimpPct}
+                          onChange={(e) => setInputs({ ...inputs, warpCrimpPct: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Weft Crimp %
+                        </label>
+                        <input
+                          type="number"
+                          step="0.5"
+                          value={inputs.weftCrimpPct}
+                          onChange={(e) => setInputs({ ...inputs, weftCrimpPct: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Warp Waste %
+                        </label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={inputs.warpWastePct}
+                          onChange={(e) => setInputs({ ...inputs, warpWastePct: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-xs text-slate-300 mb-1">
+                          Weft Waste %
+                        </label>
+                        <input
+                          type="number"
+                          step="0.1"
+                          value={inputs.weftWastePct}
+                          onChange={(e) => setInputs({ ...inputs, weftWastePct: Number(e.target.value) })}
+                          className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
+                        />
+                      </div>
                     </div>
-                  </div>
-                </>
+                  </>
+                )
               ) : inputs.costingMethod === 'direct_grey_meter' ? (
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -545,7 +868,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
                         type="number"
                         value={inputs.directGreyRatePerMeter}
                         onChange={(e) => setInputs({ ...inputs, directGreyRatePerMeter: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
                       />
                     </div>
                     <div>
@@ -556,7 +879,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
                         type="number"
                         value={inputs.finishedWidthInches}
                         onChange={(e) => setInputs({ ...inputs, finishedWidthInches: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
                       />
                     </div>
                     <div>
@@ -567,12 +890,9 @@ export const Calculator: React.FC<CalculatorProps> = ({
                         type="number"
                         value={inputs.directGSM}
                         onChange={(e) => setInputs({ ...inputs, directGSM: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
                       />
                     </div>
-                  </div>
-                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-400">
-                    Formula: <code className="text-indigo-300">Grey Cost/Meter = Grey Fabric Rate per Meter (₨ {inputs.directGreyRatePerMeter})</code>
                   </div>
                 </div>
               ) : (
@@ -586,7 +906,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
                         type="number"
                         value={inputs.directGreyRatePerKg}
                         onChange={(e) => setInputs({ ...inputs, directGreyRatePerKg: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
                       />
                     </div>
                     <div>
@@ -597,7 +917,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
                         type="number"
                         value={inputs.directGSM}
                         onChange={(e) => setInputs({ ...inputs, directGSM: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
                       />
                     </div>
                     <div>
@@ -608,78 +928,84 @@ export const Calculator: React.FC<CalculatorProps> = ({
                         type="number"
                         value={inputs.finishedWidthInches}
                         onChange={(e) => setInputs({ ...inputs, finishedWidthInches: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
+                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
                       />
                     </div>
                   </div>
-                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 text-xs text-slate-300 space-y-1">
-                    <div>Weight/Meter = <code className="text-indigo-300">GSM ({inputs.directGSM}) × Width({(inputs.finishedWidthInches * 0.0254).toFixed(2)}m) ÷ 1000 = {results.weightPerMeterKg} kg</code></div>
-                    <div>Grey Cost/Meter = <code className="text-emerald-300">Weight/Meter ({results.weightPerMeterKg} kg) × Rate/kg (₨ {inputs.directGreyRatePerKg}) = ₨ {results.grey_fabric_cost.toFixed(2)}/m</code></div>
-                  </div>
                 </div>
               )}
+
+              {/* Physical Consumption Engine Summary Card */}
+              <div className="p-4 rounded-xl bg-indigo-950/20 border border-indigo-500/20 space-y-2 text-xs">
+                <div className="font-bold text-indigo-300 flex items-center gap-1.5">
+                  <Info className="w-3.5 h-3.5" />
+                  <span>Physical Consumption & Normalized Density:</span>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-slate-300 text-[11px]">
+                  <div>Warp: <strong className="text-white">{results.warpWeightPerMeterGrams} g/m</strong></div>
+                  <div>Weft: <strong className="text-white">{results.weftWeightPerMeterGrams} g/m</strong></div>
+                  <div>Grey GSM: <strong className="text-emerald-400">{results.estimatedGreyGSM} gsm</strong></div>
+                  <div>Finished GSM: <strong className="text-emerald-400">~{results.estimatedFinishedGSM} gsm</strong></div>
+                </div>
+              </div>
             </div>
           )}
 
-          {/* TAB 2: PRODUCTION YIELD & PROCESS LOSSES */}
+          {/* TAB 2: MULTI-STAGE PRODUCTION YIELD & LOSSES */}
           {activeTabSection === 'yield' && (
             <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 animate-in fade-in">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold">2</span>
-                  <span>Production Yield & Multi-Stage Losses Engine</span>
+                  <span>Multi-Stage Yield & Loss Engine (Compound Product Rule)</span>
                 </h3>
                 <span className="text-[11px] font-bold text-emerald-400">
-                  Effective Yield: {results.effectiveYieldPct}%
+                  Effective Cumulative Yield: {results.effectiveYieldPct}%
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1">
-                    Weaving Loss %
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={inputs.weavingLossPct}
-                    onChange={(e) => setInputs({ ...inputs, weavingLossPct: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1">
-                    Wet Processing Loss %
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={inputs.wetProcessingLossPct}
-                    onChange={(e) => setInputs({ ...inputs, wetProcessingLossPct: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs text-slate-300 mb-1">
-                    Finishing Loss %
-                  </label>
-                  <input
-                    type="number"
-                    step="0.5"
-                    value={inputs.finishingLossPct}
-                    onChange={(e) => setInputs({ ...inputs, finishingLossPct: Number(e.target.value) })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                  />
-                </div>
+              <p className="text-xs text-slate-400">
+                Independent process losses are multiplied cumulatively ($Effective\ Yield = \prod (1 - Loss_i)$) to calculate exact required input.
+              </p>
+
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                {Object.entries(inputs.yieldLossStages || DEFAULT_YIELD_STAGES).map(([stageKey, val]) => {
+                  const label = stageKey
+                    .replace('LossPct', '')
+                    .replace(/([A-Z])/g, ' $1')
+                    .replace(/^./, (str) => str.toUpperCase());
+                  return (
+                    <div key={stageKey} className="p-2.5 rounded-xl bg-slate-950 border border-slate-800">
+                      <label className="block text-[11px] font-semibold text-slate-300 mb-1 truncate">
+                        {label} %
+                      </label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={val}
+                        onChange={(e) =>
+                          setInputs({
+                            ...inputs,
+                            yieldLossStages: {
+                              ...(inputs.yieldLossStages || DEFAULT_YIELD_STAGES),
+                              [stageKey]: Number(e.target.value),
+                            },
+                          })
+                        }
+                        className="w-full p-1.5 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono text-white"
+                      />
+                    </div>
+                  );
+                })}
               </div>
 
-              {/* Yield Formula Card */}
+              {/* Cumulative Yield Formula Card */}
               <div className="p-4 rounded-xl bg-slate-950/80 border border-indigo-500/30 space-y-3">
                 <div className="text-xs font-semibold text-indigo-300">
                   Yield & Input Requirement Formula:
                 </div>
-                <div className="text-xs font-mono bg-slate-900 p-2.5 rounded-lg border border-slate-800 text-slate-300">
-                  Effective Yield = (1 - {inputs.weavingLossPct}%) × (1 - {inputs.wetProcessingLossPct}%) × (1 - {inputs.finishingLossPct}%) = <span className="text-emerald-400 font-bold">{results.effectiveYieldPct}%</span>
+                <div className="text-xs font-mono bg-slate-900 p-2.5 rounded-lg border border-slate-800 text-slate-300 overflow-x-auto">
+                  Required Input = Finished Target ({inputs.finishedLengthMeters.toLocaleString()}m) ÷ {results.effectiveYieldPct}% = <span className="text-amber-400 font-bold">{results.requiredGreyInputMeters.toLocaleString()} Meters</span> ({results.requiredGreyInputKg.toLocaleString()} Kg)
                 </div>
                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs pt-1">
                   <div>
@@ -688,10 +1014,10 @@ export const Calculator: React.FC<CalculatorProps> = ({
                   </div>
                   <div>
                     <span className="text-slate-400 block text-[11px]">Required Grey Input:</span>
-                    <strong className="text-amber-300">{results.requiredGreyInputMeters.toLocaleString()} m ({results.requiredGreyInputKg.toLocaleString()} kg)</strong>
+                    <strong className="text-amber-300">{results.requiredGreyInputMeters.toLocaleString()} m</strong>
                   </div>
                   <div>
-                    <span className="text-slate-400 block text-[11px]">Total Yarn (Kg):</span>
+                    <span className="text-slate-400 block text-[11px]">Total Yarn Required:</span>
                     <strong className="text-indigo-300">{results.totalYarnWeightKg.toLocaleString()} kg</strong>
                   </div>
                   <div>
@@ -703,13 +1029,13 @@ export const Calculator: React.FC<CalculatorProps> = ({
             </div>
           )}
 
-          {/* TAB 3: YARN & WEAVING RATES */}
+          {/* TAB 3: YARN & WEAVING / KNITTING RATES */}
           {activeTabSection === 'rates' && (
             <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 animate-in fade-in">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
                   <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold">3</span>
-                  <span>Commercial Yarn & Weaving Rates Engine</span>
+                  <span>Commercial Yarn & Weaving / Knitting Rates Engine</span>
                 </h3>
               </div>
 
@@ -720,13 +1046,14 @@ export const Calculator: React.FC<CalculatorProps> = ({
                     <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-300">
-                          Warp Yarn ({inputs.warpCountNe}s Ne)
+                          Warp Yarn ({inputs.warpCountNe} {inputs.warpCountSystem})
                         </span>
                         <button
                           onClick={() => applyLiveRate('warp', inputs.warpCountNe)}
-                          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline"
+                          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline flex items-center gap-1"
                         >
-                          Use Live Rate
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Use Live Rate</span>
                         </button>
                       </div>
 
@@ -735,12 +1062,12 @@ export const Calculator: React.FC<CalculatorProps> = ({
                           type="number"
                           value={inputs.warpYarnRate}
                           onChange={(e) => setInputs({ ...inputs, warpYarnRate: Number(e.target.value) })}
-                          className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
+                          className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
                         />
                         <select
                           value={inputs.warpYarnRateUnit}
                           onChange={(e) => setInputs({ ...inputs, warpYarnRateUnit: e.target.value as any })}
-                          className="px-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none"
+                          className="px-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300"
                         >
                           <option value="10lbs">₨ / 10lbs</option>
                           <option value="kg">₨ / Kg</option>
@@ -757,13 +1084,14 @@ export const Calculator: React.FC<CalculatorProps> = ({
                     <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2.5">
                       <div className="flex items-center justify-between">
                         <span className="text-xs font-bold text-slate-300">
-                          Weft Yarn ({inputs.weftCountNe}s Ne)
+                          Weft Yarn ({inputs.weftCountNe} {inputs.weftCountSystem})
                         </span>
                         <button
                           onClick={() => applyLiveRate('weft', inputs.weftCountNe)}
-                          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline"
+                          className="text-[10px] font-bold text-indigo-400 hover:text-indigo-300 underline flex items-center gap-1"
                         >
-                          Use Live Rate
+                          <RefreshCw className="w-3 h-3" />
+                          <span>Use Live Rate</span>
                         </button>
                       </div>
 
@@ -772,12 +1100,12 @@ export const Calculator: React.FC<CalculatorProps> = ({
                           type="number"
                           value={inputs.weftYarnRate}
                           onChange={(e) => setInputs({ ...inputs, weftYarnRate: Number(e.target.value) })}
-                          className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
+                          className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 font-mono"
                         />
                         <select
                           value={inputs.weftYarnRateUnit}
                           onChange={(e) => setInputs({ ...inputs, weftYarnRateUnit: e.target.value as any })}
-                          className="px-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300 focus:outline-none"
+                          className="px-2 py-2 rounded-xl bg-slate-900 border border-slate-800 text-xs text-slate-300"
                         >
                           <option value="10lbs">₨ / 10lbs</option>
                           <option value="kg">₨ / Kg</option>
@@ -791,64 +1119,100 @@ export const Calculator: React.FC<CalculatorProps> = ({
                     </div>
                   </div>
 
-                  {/* Weaving & Sizing */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-800">
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Weaving Method
-                      </label>
-                      <select
-                        value={inputs.weavingCostMethod}
-                        onChange={(e) => setInputs({ ...inputs, weavingCostMethod: e.target.value as any })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none"
-                      >
-                        <option value="per_pick">Per Pick Rate (e.g. ₨ 0.48/pick)</option>
-                        <option value="per_meter">Per Meter Rate (e.g. ₨ 35/m)</option>
-                        <option value="per_kg">Per Kg Rate (e.g. ₨ 110/kg)</option>
-                      </select>
+                  {/* Weaving Economics & Sizing */}
+                  <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                    <div className="text-xs font-bold text-slate-200">
+                      {inputs.fabricStructure === 'knitted' ? 'Knitting Machine Economics' : 'Weaving & Loom Economics'}
                     </div>
 
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Weaving Rate (₨)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={inputs.weavingRate}
-                        onChange={(e) => setInputs({ ...inputs, weavingRate: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block text-xs text-slate-300 mb-1">
-                        Sizing Cost / Meter (₨)
-                      </label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={inputs.sizingCostPerMeter}
-                        onChange={(e) => setInputs({ ...inputs, sizingCostPerMeter: Number(e.target.value) })}
-                        className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-100 focus:outline-none font-mono"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 flex items-center justify-between text-xs">
-                    <span className="text-slate-400">Total Grey Fabric Manufacturing Cost:</span>
-                    <span className="text-sm font-extrabold text-white">₨ {results.grey_fabric_cost.toFixed(2)} / meter</span>
+                    {inputs.fabricStructure === 'knitted' ? (
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Knitting Conversion Rate (₨/Kg)</label>
+                          <input
+                            type="number"
+                            value={inputs.knittingRatePerKg || 65}
+                            onChange={(e) => setInputs({ ...inputs, knittingRatePerKg: Number(e.target.value) })}
+                            className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Knitting Efficiency %</label>
+                          <input
+                            type="number"
+                            value={inputs.knittingEfficiencyPct || 92}
+                            onChange={(e) => setInputs({ ...inputs, knittingEfficiencyPct: Number(e.target.value) })}
+                            className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Knitting Waste %</label>
+                          <input
+                            type="number"
+                            value={inputs.knittingWastePct || 2.5}
+                            onChange={(e) => setInputs({ ...inputs, knittingWastePct: Number(e.target.value) })}
+                            className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-1 sm:grid-cols-4 gap-3">
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Weaving Method</label>
+                          <select
+                            value={inputs.weavingCostMethod}
+                            onChange={(e) => setInputs({ ...inputs, weavingCostMethod: e.target.value as any })}
+                            className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs text-slate-200"
+                          >
+                            <option value="per_pick">Per Pick Rate</option>
+                            <option value="per_meter">Per Meter Rate</option>
+                            <option value="per_kg">Per Kg Rate</option>
+                            <option value="machine_economics">Machine Hourly Economics</option>
+                          </select>
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Weaving Rate / Machine Cost</label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={inputs.weavingRate}
+                            onChange={(e) => setInputs({ ...inputs, weavingRate: Number(e.target.value) })}
+                            className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Sizing Cost / m (₨)</label>
+                          <input
+                            type="number"
+                            step="0.5"
+                            value={inputs.sizingCostPerMeter}
+                            onChange={(e) => setInputs({ ...inputs, sizingCostPerMeter: Number(e.target.value) })}
+                            className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-[11px] text-slate-400 mb-1">Grey Inspection / m (₨)</label>
+                          <input
+                            type="number"
+                            step="0.1"
+                            value={inputs.greyInspectionCostPerMeter || 1.2}
+                            onChange={(e) => setInputs({ ...inputs, greyInspectionCostPerMeter: Number(e.target.value) })}
+                            className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                          />
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </>
               ) : (
                 <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400">
-                  Direct Grey Cost Mode is active ({inputs.costingMethod === 'direct_grey_meter' ? 'Per Meter' : 'Per Kg'}). To adjust individual yarn and weaving rates, switch to Method 1 above.
+                  Direct Grey Cost Mode is active ({inputs.costingMethod === 'direct_grey_meter' ? 'Per Meter' : 'Per Kg'}).
                 </div>
               )}
             </div>
           )}
 
-          {/* TAB 4: PROCESSING, DYEING & FINISHING */}
+          {/* TAB 4: PROCESSING & DYEING */}
           {activeTabSection === 'processing' && (
             <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 animate-in fade-in">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
@@ -863,9 +1227,6 @@ export const Calculator: React.FC<CalculatorProps> = ({
 
               {/* Operations Checklist */}
               <div className="space-y-2">
-                <span className="text-xs font-semibold text-slate-300 block">
-                  Select and configure individual processing stages:
-                </span>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                   {inputs.processingOperations.map((op) => (
                     <div
@@ -881,7 +1242,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
                           type="checkbox"
                           checked={op.enabled}
                           onChange={() => toggleProcessingOp(op.id)}
-                          className="w-4 h-4 rounded text-indigo-600 bg-slate-900 border-slate-700 focus:ring-0 cursor-pointer"
+                          className="w-4 h-4 rounded text-indigo-600 bg-slate-900 border-slate-700"
                         />
                         <span className="text-xs font-medium text-slate-200">{op.name}</span>
                       </div>
@@ -892,7 +1253,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
                           disabled={!op.enabled}
                           value={op.costPerMeter}
                           onChange={(e) => updateProcessingCost(op.id, Number(e.target.value))}
-                          className="w-16 px-2 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-right text-slate-200 focus:outline-none font-mono"
+                          className="w-16 px-2 py-1 rounded bg-slate-900 border border-slate-800 text-xs text-right text-slate-200 font-mono"
                         />
                       </div>
                     </div>
@@ -919,7 +1280,7 @@ export const Calculator: React.FC<CalculatorProps> = ({
                       }}
                       className="w-3.5 h-3.5"
                     />
-                    <span>Detailed Dyeing Cost Breakdown (Machine, Dyes, Steam, Chemicals, Labor)</span>
+                    <span>Detailed Dyeing Breakdown (Machine, Dyes, Steam, Chemicals, Batch Min)</span>
                   </div>
                   {showDetailedDyeing ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
                 </div>
@@ -985,199 +1346,358 @@ export const Calculator: React.FC<CalculatorProps> = ({
                   </div>
                 )}
               </div>
+            </div>
+          )}
 
-              {/* Detailed Finishing Breakdown Drawer */}
-              <div className="rounded-xl bg-slate-950 border border-slate-800 p-4 space-y-3">
-                <div
-                  onClick={() => setShowDetailedFinishing(!showDetailedFinishing)}
-                  className="cursor-pointer flex items-center justify-between text-xs font-bold text-indigo-300"
-                >
-                  <div className="flex items-center gap-2">
+          {/* TAB 5: COLOR-WISE PRINTING */}
+          {activeTabSection === 'printing' && (
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    checked={inputs.colorPrinting?.enabled || false}
+                    onChange={(e) =>
+                      setInputs({
+                        ...inputs,
+                        colorPrinting: {
+                          ...(inputs.colorPrinting || DEFAULT_COLOR_PRINTING),
+                          enabled: e.target.checked,
+                        },
+                      })
+                    }
+                    className="w-4 h-4 rounded text-indigo-600 bg-slate-900 border-slate-700"
+                  />
+                  <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider">
+                    Enable Color-Wise Printing Calculator
+                  </h3>
+                </div>
+                <span className="text-[11px] font-bold text-indigo-300">
+                  Printing Total: ₨ {results.colorPrintingReport?.totalPrintingCostPerMeter.toFixed(2) || '0.00'}/m
+                </span>
+              </div>
+
+              {inputs.colorPrinting?.enabled && (
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1">Printing Method</label>
+                      <select
+                        value={inputs.colorPrinting.method}
+                        onChange={(e) =>
+                          setInputs({
+                            ...inputs,
+                            colorPrinting: {
+                              ...inputs.colorPrinting!,
+                              method: e.target.value as any,
+                            },
+                          })
+                        }
+                        className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white"
+                      >
+                        <option value="rotary_screen">Rotary Screen Printing</option>
+                        <option value="flatbed_screen">Flatbed Screen Printing</option>
+                        <option value="digital_reactive">Digital Reactive Inkjet</option>
+                        <option value="digital_sublimation">Digital Sublimation</option>
+                        <option value="pigment">Pigment Printing</option>
+                      </select>
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1">Screen Cost / Screen (₨)</label>
+                      <input
+                        type="number"
+                        value={inputs.colorPrinting.screenCostPerScreen}
+                        onChange={(e) =>
+                          setInputs({
+                            ...inputs,
+                            colorPrinting: {
+                              ...inputs.colorPrinting!,
+                              screenCostPerScreen: Number(e.target.value),
+                            },
+                          })
+                        }
+                        className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-xs text-slate-300 mb-1">Machine Rate / m (₨)</label>
+                      <input
+                        type="number"
+                        value={inputs.colorPrinting.machinePrintingRatePerMeter}
+                        onChange={(e) =>
+                          setInputs({
+                            ...inputs,
+                            colorPrinting: {
+                              ...inputs.colorPrinting!,
+                              machinePrintingRatePerMeter: Number(e.target.value),
+                            },
+                          })
+                        }
+                        className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono"
+                      />
+                    </div>
+                  </div>
+
+                  {/* Individual Colors Breakdown Table */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-xs font-bold text-slate-300">
+                        Color Channels ({inputs.colorPrinting.colors?.length || 0} Colors)
+                      </span>
+                      <button
+                        onClick={addPrintingColor}
+                        className="flex items-center gap-1 text-[11px] font-bold text-indigo-400 hover:text-indigo-300 px-2 py-1 rounded bg-indigo-600/20 border border-indigo-500/30"
+                      >
+                        <Plus className="w-3 h-3" />
+                        <span>Add Color</span>
+                      </button>
+                    </div>
+
+                    <div className="overflow-x-auto rounded-xl border border-slate-800">
+                      <table className="w-full text-left text-xs">
+                        <thead className="bg-slate-950 text-slate-400 text-[11px] uppercase border-b border-slate-800">
+                          <tr>
+                            <th className="p-2.5">Color Name</th>
+                            <th className="p-2.5">Consumption (g/m)</th>
+                            <th className="p-2.5">Ink Rate (₨/Kg)</th>
+                            <th className="p-2.5">Cost / Meter</th>
+                            <th className="p-2.5 text-center">Action</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-800/80 bg-slate-900/60 font-mono">
+                          {inputs.colorPrinting.colors?.map((col) => (
+                            <tr key={col.id}>
+                              <td className="p-2">
+                                <input
+                                  type="text"
+                                  value={col.colorName}
+                                  onChange={(e) => updatePrintingColor(col.id, 'colorName', e.target.value)}
+                                  className="w-full p-1 rounded bg-slate-950 border border-slate-800 text-xs text-white"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  step="0.1"
+                                  value={col.consumptionGramsPerMeter}
+                                  onChange={(e) => updatePrintingColor(col.id, 'consumptionGramsPerMeter', Number(e.target.value))}
+                                  className="w-24 p-1 rounded bg-slate-950 border border-slate-800 text-xs text-white"
+                                />
+                              </td>
+                              <td className="p-2">
+                                <input
+                                  type="number"
+                                  value={col.inkRatePerKg}
+                                  onChange={(e) => updatePrintingColor(col.id, 'inkRatePerKg', Number(e.target.value))}
+                                  className="w-28 p-1 rounded bg-slate-950 border border-slate-800 text-xs text-white"
+                                />
+                              </td>
+                              <td className="p-2 font-bold text-emerald-400">
+                                ₨ {((col.consumptionGramsPerMeter / 1000) * col.inkRatePerKg).toFixed(2)}/m
+                              </td>
+                              <td className="p-2 text-center">
+                                <button
+                                  onClick={() => removePrintingColor(col.id)}
+                                  className="p-1 rounded text-red-400 hover:text-red-300 hover:bg-red-500/20"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* TAB 6: PACKAGING & LOGISTICS */}
+          {activeTabSection === 'logistics' && (
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                  <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold">6</span>
+                  <span>Packaging & Logistics Breakdown Engine</span>
+                </h3>
+              </div>
+
+              {/* Packaging */}
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <div className="text-xs font-bold text-slate-200">Packaging Specifications</div>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Meters per Roll</label>
                     <input
-                      type="checkbox"
-                      checked={inputs.detailedFinishing?.enabled || false}
-                      onChange={(e) => {
-                        e.stopPropagation();
+                      type="number"
+                      value={inputs.packaging?.metersPerRoll || 100}
+                      onChange={(e) =>
                         setInputs({
                           ...inputs,
-                          detailedFinishing: { ...inputs.detailedFinishing, enabled: !inputs.detailedFinishing?.enabled },
-                        });
-                      }}
-                      className="w-3.5 h-3.5"
+                          packaging: { ...(inputs.packaging || DEFAULT_PACKAGING), metersPerRoll: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
                     />
-                    <span>Detailed Finishing Breakdown (Chemicals, Machine, Energy, Labor)</span>
                   </div>
-                  {showDetailedFinishing ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Polybag / Roll (₨)</label>
+                    <input
+                      type="number"
+                      value={inputs.packaging?.polybagCostPerRoll || 45}
+                      onChange={(e) =>
+                        setInputs({
+                          ...inputs,
+                          packaging: { ...(inputs.packaging || DEFAULT_PACKAGING), polybagCostPerRoll: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Carton / Roll (₨)</label>
+                    <input
+                      type="number"
+                      value={inputs.packaging?.cartonCostPerRoll || 120}
+                      onChange={(e) =>
+                        setInputs({
+                          ...inputs,
+                          packaging: { ...(inputs.packaging || DEFAULT_PACKAGING), cartonCostPerRoll: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Labor / m (₨)</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={inputs.packaging?.packagingLaborPerMeter || 0.85}
+                      onChange={(e) =>
+                        setInputs({
+                          ...inputs,
+                          packaging: { ...(inputs.packaging || DEFAULT_PACKAGING), packagingLaborPerMeter: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full p-2 rounded-lg bg-slate-900 border border-slate-800 text-xs font-mono"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Logistics */}
+              <div className="p-4 rounded-xl bg-slate-950/80 border border-slate-800 space-y-3">
+                <div className="flex items-center justify-between text-xs font-bold text-slate-200">
+                  <span>Logistics & Freight Calculation</span>
+                  <select
+                    value={inputs.logistics?.method || 'by_weight'}
+                    onChange={(e) =>
+                      setInputs({
+                        ...inputs,
+                        logistics: { ...(inputs.logistics || DEFAULT_LOGISTICS), method: e.target.value as any },
+                      })
+                    }
+                    className="p-1.5 rounded bg-slate-900 border border-slate-800 text-[11px] text-slate-300"
+                  >
+                    <option value="by_weight">By Weight (Rate/Kg)</option>
+                    <option value="by_distance_km">Distance × Rate/Km</option>
+                    <option value="fixed_container">Fixed Container / Truck</option>
+                  </select>
                 </div>
 
-                {showDetailedFinishing && inputs.detailedFinishing?.enabled && (
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-2 border-t border-slate-800 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+                  {inputs.logistics?.method === 'by_distance_km' ? (
+                    <>
+                      <div>
+                        <label className="block text-[11px] text-slate-400 mb-1">Distance (Km)</label>
+                        <input
+                          type="number"
+                          value={inputs.logistics.distanceKm}
+                          onChange={(e) =>
+                            setInputs({
+                              ...inputs,
+                              logistics: { ...inputs.logistics!, distanceKm: Number(e.target.value) },
+                            })
+                          }
+                          className="w-full p-2 rounded bg-slate-900 border border-slate-800 font-mono"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[11px] text-slate-400 mb-1">Rate per Km (₨)</label>
+                        <input
+                          type="number"
+                          value={inputs.logistics.ratePerKm}
+                          onChange={(e) =>
+                            setInputs({
+                              ...inputs,
+                              logistics: { ...inputs.logistics!, ratePerKm: Number(e.target.value) },
+                            })
+                          }
+                          className="w-full p-2 rounded bg-slate-900 border border-slate-800 font-mono"
+                        />
+                      </div>
+                    </>
+                  ) : (
                     <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Machine Cost</label>
+                      <label className="block text-[11px] text-slate-400 mb-1">Freight Rate / Kg (₨)</label>
                       <input
                         type="number"
-                        value={inputs.detailedFinishing.machineCostPerMeter}
+                        value={inputs.logistics?.freightRatePerKg || 14}
                         onChange={(e) =>
                           setInputs({
                             ...inputs,
-                            detailedFinishing: { ...inputs.detailedFinishing, machineCostPerMeter: Number(e.target.value) },
+                            logistics: { ...(inputs.logistics || DEFAULT_LOGISTICS), freightRatePerKg: Number(e.target.value) },
                           })
                         }
-                        className="w-full p-1.5 rounded bg-slate-900 border border-slate-800 text-xs font-mono"
+                        className="w-full p-2 rounded bg-slate-900 border border-slate-800 font-mono"
                       />
                     </div>
-                    <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Chemical Cost</label>
-                      <input
-                        type="number"
-                        value={inputs.detailedFinishing.chemicalCostPerMeter}
-                        onChange={(e) =>
-                          setInputs({
-                            ...inputs,
-                            detailedFinishing: { ...inputs.detailedFinishing, chemicalCostPerMeter: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full p-1.5 rounded bg-slate-900 border border-slate-800 text-xs font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Energy Cost</label>
-                      <input
-                        type="number"
-                        value={inputs.detailedFinishing.energyCostPerMeter}
-                        onChange={(e) =>
-                          setInputs({
-                            ...inputs,
-                            detailedFinishing: { ...inputs.detailedFinishing, energyCostPerMeter: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full p-1.5 rounded bg-slate-900 border border-slate-800 text-xs font-mono"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Labor Cost</label>
-                      <input
-                        type="number"
-                        value={inputs.detailedFinishing.laborCostPerMeter}
-                        onChange={(e) =>
-                          setInputs({
-                            ...inputs,
-                            detailedFinishing: { ...inputs.detailedFinishing, laborCostPerMeter: Number(e.target.value) },
-                          })
-                        }
-                        className="w-full p-1.5 rounded bg-slate-900 border border-slate-800 text-xs font-mono"
-                      />
-                    </div>
+                  )}
+
+                  <div>
+                    <label className="block text-[11px] text-slate-400 mb-1">Transit Insurance %</label>
+                    <input
+                      type="number"
+                      step="0.1"
+                      value={inputs.logistics?.transitInsurancePct || 0.5}
+                      onChange={(e) =>
+                        setInputs({
+                          ...inputs,
+                          logistics: { ...(inputs.logistics || DEFAULT_LOGISTICS), transitInsurancePct: Number(e.target.value) },
+                        })
+                      }
+                      className="w-full p-2 rounded bg-slate-900 border border-slate-800 font-mono"
+                    />
                   </div>
-                )}
+                </div>
               </div>
             </div>
           )}
 
-          {/* TAB 5: LOGISTICS, OVERHEAD, MARGIN & TAX */}
+          {/* TAB 7: MARGIN & TAX */}
           {activeTabSection === 'commercial' && (
             <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 animate-in fade-in">
               <div className="flex items-center justify-between border-b border-slate-800 pb-3">
                 <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
-                  <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold">5</span>
-                  <span>Commercial Logistics, Margin & Tax Engine</span>
+                  <span className="w-5 h-5 rounded-full bg-indigo-600/30 text-indigo-400 flex items-center justify-center text-[10px] font-bold">7</span>
+                  <span>Commercial Margin vs Markup & Tax Engine</span>
                 </h3>
-              </div>
-
-              {/* Transport & Overhead */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                    <span className="flex items-center gap-1.5">
-                      <Truck className="w-3.5 h-3.5 text-indigo-400" />
-                      <span>Transport Freight</span>
-                    </span>
-                    <select
-                      value={inputs.transportMethod}
-                      onChange={(e) => setInputs({ ...inputs, transportMethod: e.target.value as any })}
-                      className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[11px] text-slate-300"
-                    >
-                      <option value="by_weight">By Weight (Rate/Kg)</option>
-                      <option value="fixed_per_meter">Fixed Total (₨)</option>
-                    </select>
-                  </div>
-                  {inputs.transportMethod === 'by_weight' ? (
-                    <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Rate per Kg (₨)</label>
-                      <input
-                        type="number"
-                        value={inputs.transportRatePerKg}
-                        onChange={(e) => setInputs({ ...inputs, transportRatePerKg: Number(e.target.value) })}
-                        className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono"
-                      />
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Total Fixed Transport (₨)</label>
-                      <input
-                        type="number"
-                        value={inputs.fixedTransportTotal}
-                        onChange={(e) => setInputs({ ...inputs, fixedTransportTotal: Number(e.target.value) })}
-                        className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono"
-                      />
-                    </div>
-                  )}
-                  <div className="text-[11px] text-slate-400">
-                    Transport Cost: <strong className="text-slate-200">₨ {results.transport_cost.toFixed(2)}/m</strong>
-                  </div>
-                </div>
-
-                <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800 space-y-2">
-                  <div className="flex items-center justify-between text-xs font-bold text-slate-300">
-                    <span>Overhead Allocation</span>
-                    <select
-                      value={inputs.overheadMethod}
-                      onChange={(e) => setInputs({ ...inputs, overheadMethod: e.target.value as any })}
-                      className="px-2 py-1 rounded bg-slate-900 border border-slate-800 text-[11px] text-slate-300"
-                    >
-                      <option value="percentage">% of Direct Cost</option>
-                      <option value="fixed_total">Fixed Total (₨)</option>
-                    </select>
-                  </div>
-                  {inputs.overheadMethod === 'percentage' ? (
-                    <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Overhead Percentage %</label>
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={inputs.overheadPct}
-                        onChange={(e) => setInputs({ ...inputs, overheadPct: Number(e.target.value) })}
-                        className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono"
-                      />
-                    </div>
-                  ) : (
-                    <div>
-                      <label className="block text-[11px] text-slate-400 mb-1">Total Fixed Overhead (₨)</label>
-                      <input
-                        type="number"
-                        value={inputs.fixedOverheadTotal}
-                        onChange={(e) => setInputs({ ...inputs, fixedOverheadTotal: Number(e.target.value) })}
-                        className="w-full p-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-mono"
-                      />
-                    </div>
-                  )}
-                  <div className="text-[11px] text-slate-400">
-                    Overhead Cost: <strong className="text-slate-200">₨ {results.overhead_cost.toFixed(2)}/m</strong>
-                  </div>
-                </div>
               </div>
 
               {/* CRITICAL FEATURE: MARKUP VS MARGIN STRATEGY */}
               <div className="p-4 rounded-2xl bg-indigo-950/40 border border-indigo-500/40 space-y-3">
                 <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold text-white uppercase tracking-wider">
-                      Commercial Pricing Strategy:
-                    </span>
-                    <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
-                      MARKUP vs MARGIN
-                    </span>
-                  </div>
+                  <span className="text-xs font-bold text-white uppercase tracking-wider">
+                    Commercial Pricing Strategy:
+                  </span>
+                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-500/20 text-indigo-300">
+                    MARKUP vs MARGIN
+                  </span>
                 </div>
 
                 {/* Switcher Toggle */}
@@ -1285,6 +1805,94 @@ export const Calculator: React.FC<CalculatorProps> = ({
                     </div>
                   </div>
                 )}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 8: DETERMINISTIC FORMULA AUDIT & WATERFALL */}
+          {activeTabSection === 'audit' && (
+            <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 animate-in fade-in">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 className="text-xs font-bold text-slate-200 uppercase tracking-wider flex items-center gap-2">
+                  <FileSpreadsheet className="w-4 h-4 text-indigo-400" />
+                  <span>Deterministic Audit Trail (Input → Formula → Intermediate → Final)</span>
+                </h3>
+                <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  {results.calculationCompletenessScore || 100}% Completeness
+                </span>
+              </div>
+
+              {/* Visual Cost Waterfall Bar Chart */}
+              <div className="p-4 rounded-xl bg-slate-950 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                    <BarChart3 className="w-3.5 h-3.5 text-indigo-400" />
+                    <span>Visual Cost Waterfall: Cumulative Build-Up (₨ / Meter)</span>
+                  </span>
+                  <span className="text-[11px] font-mono text-emerald-400">
+                    Final: ₨ {results.final_price.toFixed(2)}/m
+                  </span>
+                </div>
+
+                <div className="h-44 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={waterfallData} margin={{ top: 10, right: 10, left: -20, bottom: 20 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
+                      <XAxis dataKey="name" stroke="#64748b" tick={{ fontSize: 9 }} angle={-25} textAnchor="end" />
+                      <YAxis stroke="#64748b" tick={{ fontSize: 10 }} />
+                      <ChartTooltip
+                        contentStyle={{
+                          backgroundColor: '#0f172a',
+                          borderColor: '#334155',
+                          borderRadius: '10px',
+                          fontSize: '11px',
+                        }}
+                        formatter={(val: any, name: any) => [
+                          `₨ ${Number(val).toFixed(2)}/m`,
+                          name === 'cost' ? 'Stage Cost' : 'Cumulative Cost',
+                        ]}
+                      />
+                      <Bar dataKey="cumulative" fill="#6366f1" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Step by Step Trace Cards */}
+              <div className="space-y-2 max-h-[360px] overflow-y-auto pr-1">
+                {results.auditSteps?.map((step) => (
+                  <div
+                    key={step.stepNumber}
+                    onClick={() => setSelectedAuditStep(selectedAuditStep === step.stepNumber ? null : step.stepNumber)}
+                    className="p-3 rounded-xl bg-slate-950 border border-slate-800/90 hover:border-indigo-500/40 cursor-pointer transition-all space-y-1.5"
+                  >
+                    <div className="flex items-center justify-between text-xs">
+                      <div className="flex items-center gap-2">
+                        <span className="w-5 h-5 rounded-full bg-slate-800 text-slate-300 flex items-center justify-center font-bold text-[10px]">
+                          {step.stepNumber}
+                        </span>
+                        <span className="font-bold text-white">{step.name}</span>
+                        <span className="text-[10px] text-slate-500 uppercase px-1.5 py-0.5 rounded bg-slate-900">
+                          {step.category}
+                        </span>
+                      </div>
+                      <span className="font-mono font-bold text-emerald-400">
+                        {step.finalValue.toFixed(2)} {step.unit}
+                      </span>
+                    </div>
+
+                    <div className="text-[11px] font-mono bg-slate-900/90 p-2 rounded text-indigo-300">
+                      <code>{step.formulaString}</code>
+                    </div>
+
+                    {selectedAuditStep === step.stepNumber && (
+                      <div className="pt-2 border-t border-slate-800 text-[11px] text-slate-400 grid grid-cols-2 gap-2 animate-in fade-in">
+                        <div>Inputs Used: <span className="text-slate-200">{step.inputsUsed}</span></div>
+                        <div>Intermediate: <span className="text-amber-300">{step.intermediateResult}</span></div>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
             </div>
           )}

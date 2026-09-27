@@ -7,6 +7,7 @@ import {
   Sparkles
 } from 'lucide-react';
 import { convertYarnCount } from '../services/calculationEngine';
+import type { YarnCountSystem } from '../types';
 
 interface TextileToolsProps {
   initialTool?: string;
@@ -17,7 +18,7 @@ export const TextileTools: React.FC<TextileToolsProps> = ({ initialTool }) => {
 
   // Tool 1: Yarn Count Converter State
   const [yarnVal, setYarnVal] = useState<number>(20);
-  const [fromUnit, setFromUnit] = useState<'Ne' | 'Nm' | 'Denier' | 'Tex' | 'Dtex'>('Ne');
+  const [fromUnit, setFromUnit] = useState<YarnCountSystem>('Ne');
 
   // Tool 2: GSM & Weight Estimator State
   const [gsmWarpNe, setGsmWarpNe] = useState<number>(20);
@@ -139,9 +140,9 @@ export const TextileTools: React.FC<TextileToolsProps> = ({ initialTool }) => {
                 { unit: 'Nm', title: 'Metric Count', desc: '1000m / kg' },
                 { unit: 'Denier', title: 'Denier (D)', desc: 'g / 9,000m' },
                 { unit: 'Tex', title: 'Tex', desc: 'g / 1,000m' },
-                { unit: 'Dtex', title: 'Decitex (Dtex)', desc: 'g / 10,000m' },
+                { unit: 'dTex', title: 'Decitex (dTex)', desc: 'g / 10,000m' },
               ].map((item) => {
-                const converted = convertYarnCount(yarnVal, fromUnit, item.unit as any);
+                const converted = convertYarnCount(yarnVal, fromUnit, item.unit as YarnCountSystem);
                 const isCurrent = fromUnit === item.unit;
 
                 return (

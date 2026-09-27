@@ -108,14 +108,97 @@ export interface DetailedFinishingBreakdown {
   overheadCostPerMeter: number;
 }
 
+export type YarnCountSystem = 'Ne' | 'Nm' | 'Tex' | 'Denier' | 'dTex';
+export type FabricStructure = 'woven' | 'knitted';
+
+// Multi-Stage Process Yield Breakdown
+export interface ProcessYieldStageLosses {
+  warpingLossPct: number;
+  sizingLossPct: number;
+  weavingLossPct: number;
+  greyInspectionLossPct: number;
+  desizingLossPct: number;
+  scouringBleachingLossPct: number;
+  mercerizingLossPct: number;
+  dyeingLossPct: number;
+  printingLossPct: number;
+  finishingLossPct: number;
+  compactingLossPct: number;
+  finalInspectionLossPct: number;
+}
+
+// Color-Wise Printing Breakdown
+export interface PrintingColorItem {
+  id: string;
+  colorName: string;
+  hexCode?: string;
+  consumptionGramsPerMeter: number;
+  inkRatePerKg: number;
+  costPerMeter: number;
+}
+
+export interface ColorWisePrintingConfig {
+  enabled: boolean;
+  method: 'rotary_screen' | 'flatbed_screen' | 'digital_reactive' | 'digital_sublimation' | 'pigment';
+  colors: PrintingColorItem[];
+  screenCount: number;
+  screenCostPerScreen: number;
+  setupCostFixed: number;
+  machinePrintingRatePerMeter: number;
+  chemicalCostPerMeter: number;
+  dryingCuringCostPerMeter: number;
+  printingWastePct: number;
+  minimumBatchCharge: number;
+}
+
+// Packaging Configuration
+export interface PackagingConfig {
+  enabled: boolean;
+  cartonCostPerRoll: number;
+  polybagCostPerRoll: number;
+  rollTubesCost: number;
+  labelsAndTagsCostPerRoll: number;
+  palletAndStrappingCost: number;
+  packagingLaborPerMeter: number;
+  metersPerRoll: number;
+}
+
+// Logistics Configuration
+export interface LogisticsConfig {
+  enabled: boolean;
+  method: 'by_weight' | 'by_distance_km' | 'fixed_container' | 'fixed_total';
+  distanceKm: number;
+  ratePerKm: number;
+  freightRatePerKg: number;
+  containerRateFixed: number;
+  loadingUnloadingCost: number;
+  transitInsurancePct: number;
+  portAndCustomsCharges: number;
+}
+
+// Step-by-Step Formula Audit Trace Item
+export interface FormulaAuditStep {
+  stepNumber: number;
+  category: string;
+  name: string;
+  formulaString: string;
+  inputsUsed: string;
+  intermediateResult: string;
+  finalValue: number;
+  unit: string;
+  assumptionUsed?: string;
+  isVerified: boolean;
+}
+
 export interface FabricCalculationInput {
   estimateName: string;
   customerName: string;
+  fabricStructure: FabricStructure;
   fabricType: string;
   finishedWidthInches: number;
   finishedLengthMeters: number; // Target finished order quantity
 
-  // Costing Method: 'engineered' (from yarn & weaving) vs 'direct_grey_meter' vs 'direct_grey_kg'
+  // Costing Method: 'engineered' vs 'direct_grey_meter' vs 'direct_grey_kg'
   costingMethod: 'engineered' | 'direct_grey_meter' | 'direct_grey_kg';
   
   // Direct Grey Fabric Rates (if known)
@@ -123,15 +206,35 @@ export interface FabricCalculationInput {
   directGreyRatePerKg: number;
   directGSM: number; // If direct kg rate is used
 
-  // Physical Construction Parameters (Engineered Mode)
+  // Yarn Count Systems
+  warpCountSystem: YarnCountSystem;
+  weftCountSystem: YarnCountSystem;
   warpCountNe: number;
   weftCountNe: number;
+
+  // Woven Physical Parameters
   epi: number;
   ppi: number;
+  reedCountDents?: number;
+  reedWidthInches?: number;
   warpCrimpPct: number;
   weftCrimpPct: number;
   warpWastePct: number;
   weftWastePct: number;
+
+  // Machine Economics (Loom / Machine)
+  loomRpmSpeed?: number;
+  loomEfficiencyPct?: number;
+  loomHourlyCost?: number;
+
+  // Knitted Fabric Specifications
+  knittingStitchLengthMm?: number;
+  knittingCoursesPerCm?: number;
+  knittingWalesPerCm?: number;
+  knittingGauge?: number;
+  knittingRatePerKg?: number;
+  knittingEfficiencyPct?: number;
+  knittingWastePct?: number;
 
   // Yarn Pricing
   warpYarnRate: number;
@@ -140,26 +243,32 @@ export interface FabricCalculationInput {
   weftYarnRateUnit: 'kg' | 'lb' | '10lbs';
 
   // Weaving
-  weavingCostMethod: 'per_meter' | 'per_pick' | 'per_kg';
+  weavingCostMethod: 'per_meter' | 'per_pick' | 'per_kg' | 'machine_economics';
   weavingRate: number; // e.g. ₨ 0.48/pick, ₨ 35/m, or ₨ 120/kg
   sizingCostPerMeter: number;
+  greyInspectionCostPerMeter: number;
   otherGreyManufacturingCostPerMeter: number;
 
-  // Multi-Stage Process Loss & Yield
-  weavingLossPct: number; // e.g. 2%
-  wetProcessingLossPct: number; // e.g. 4%
-  finishingLossPct: number; // e.g. 1.5%
+  // Multi-Stage Cumulative Yield Losses
+  weavingLossPct: number;
+  wetProcessingLossPct: number;
+  finishingLossPct: number;
+  yieldLossStages?: ProcessYieldStageLosses;
 
   // Processing Operations Checklist
   processingOperations: ProcessingOperation[];
   detailedDyeing: DetailedDyeingBreakdown;
   detailedFinishing: DetailedFinishingBreakdown;
+  minimumDyeingBatchCharge?: number;
 
-  // Printing & Aux Chemicals
+  // Color-Wise Printing Engine
+  colorPrinting?: ColorWisePrintingConfig;
   printingCostPerMeter: number;
   auxChemicalCostPerMeter: number;
 
-  // Transport Methodology
+  // Packaging & Logistics
+  packaging?: PackagingConfig;
+  logistics?: LogisticsConfig;
   transportMethod: 'fixed_per_meter' | 'by_weight';
   transportRatePerKg: number;
   fixedTransportTotal: number;
@@ -179,15 +288,19 @@ export interface FabricCalculationInput {
   // Tax Configuration
   taxMode: 'exclusive' | 'inclusive' | 'exempt';
   taxRatePct: number; // e.g. 18% GST / VAT
+  customsDutyPct?: number;
 
-  // Currency
+  // Currency & Snapshot
   currency: CurrencyCode;
-  rateSourceSnapshot?: Record<string, { rate: number; source: string; status: RateStatus }>;
+  rateSourceSnapshot?: Record<string, { rate: number; source: string; status: RateStatus; timestamp?: string }>;
+  formulaVersion?: string;
+  calculatedAt?: string;
 }
 
-// Master FabricIQ Calculation Output Object
+// Master FabricIQ Pro Calculation Output Object
 export interface FabricIQCalculationResult {
   // Physical Consumption Engine Outputs
+  fabricStructure: FabricStructure;
   warpWeightPerMeterGrams: number;
   weftWeightPerMeterGrams: number;
   totalGreyWeightPerMeterGrams: number;
@@ -196,11 +309,12 @@ export interface FabricIQCalculationResult {
   estimatedFinishedGSM: number;
 
   // Production Yield Engine Outputs
-  effectiveYieldPct: number; // e.g. (1 - loss1) * (1 - loss2) * (1 - loss3)
+  effectiveYieldPct: number; // Compound: (1 - loss1) * (1 - loss2) * ...
   requiredGreyInputKg: number;
   requiredGreyInputMeters: number;
   finishedOutputKg: number;
   finishedOutputMeters: number;
+  totalProcessLossPct: number;
 
   // Yarn Weight Totals
   totalWarpWeightKg: number;
@@ -215,15 +329,20 @@ export interface FabricIQCalculationResult {
   weft_yarn_cost: number;
   weaving_cost: number;
   sizing_cost: number;
+  grey_inspection_cost: number;
   grey_fabric_cost: number;
   processing_cost: number;
   dyeing_cost: number;
-  finishing_cost: number;
   printing_cost: number;
+  color_ink_cost: number;
+  screen_cost_per_meter: number;
+  finishing_cost: number;
   chemical_cost: number;
   energy_cost: number;
   labor_cost: number;
+  packaging_cost: number;
   transport_cost: number;
+  insurance_customs_cost: number;
   overhead_cost: number;
   wastage_cost: number;
   other_manufacturing_cost: number;
@@ -258,12 +377,38 @@ export interface FabricIQCalculationResult {
 
   currency: CurrencyCode;
 
-  // Percentage Breakdown for Analytics
+  // Accuracy & Completeness Engine
+  completenessScore: number; // 0 to 100%
+  calculationCompletenessScore?: number;
+  estimateConfidence?: string;
+  status: 'VERIFIED_INPUTS' | 'ASSUMPTIONS_USED';
+  assumptionsList: string[];
+  missingInputsList: string[];
+
+  // Auditable Step-by-Step Formulas
+  auditSteps: FormulaAuditStep[];
+
+  // Detailed Reports & Waterfall
+  colorPrintingReport?: {
+    totalPrintingCostPerMeter: number;
+    totalColorInkCostPerMeter: number;
+    totalScreenCostPerMeter: number;
+    colorBreakdown: any[];
+  };
+  costWaterfall?: {
+    stageName: string;
+    stageCostPerMeter: number;
+    cumulativeCostPerMeter: number;
+  }[];
+
+  // Percentage Breakdown for Analytics & Waterfall
   breakdownPercentages: {
     yarnPct: number;
     weavingPct: number;
     processingPct: number;
     dyeingFinishingPct: number;
+    printingPct: number;
+    packagingLogisticsPct: number;
     wastagePct: number;
     logisticsOverheadPct: number;
     marginPct: number;
