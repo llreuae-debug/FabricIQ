@@ -2,6 +2,40 @@ import type { SavedEstimate, FabricCalculationInput, FabricIQCalculationResult }
 import jsPDF from 'jspdf';
 import { currencyService } from './currencyService';
 import { DEFAULT_PROCESSING_OPERATIONS, DEFAULT_DETAILED_DYEING, DEFAULT_DETAILED_FINISHING } from './calculationEngine';
+import logoImg from '../assets/logo.png';
+
+let cachedLogoDataUrl: string | null = null;
+
+const getLogoDataUrl = (): Promise<string | null> => {
+  if (cachedLogoDataUrl) return Promise.resolve(cachedLogoDataUrl);
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') {
+      resolve(null);
+      return;
+    }
+    const img = new Image();
+    img.crossOrigin = 'Anonymous';
+    img.onload = () => {
+      try {
+        const canvas = document.createElement('canvas');
+        canvas.width = img.naturalWidth || img.width || 200;
+        canvas.height = img.naturalHeight || img.height || 200;
+        const ctx = canvas.getContext('2d');
+        if (ctx) {
+          ctx.drawImage(img, 0, 0);
+          cachedLogoDataUrl = canvas.toDataURL('image/png');
+          resolve(cachedLogoDataUrl);
+          return;
+        }
+      } catch {
+        // fallback
+      }
+      resolve(logoImg);
+    };
+    img.onerror = () => resolve(null);
+    img.src = logoImg;
+  });
+};
 
 const STORAGE_KEY_ESTIMATES = 'fabriciq_saved_estimates_v2';
 
@@ -272,13 +306,14 @@ export class EstimateService {
     return false;
   }
 
-  public generateQuotationPDF(estimate: SavedEstimate): void {
+  public async generateQuotationPDF(estimate: SavedEstimate): Promise<void> {
     const doc = new jsPDF({
       orientation: 'portrait',
       unit: 'mm',
       format: 'a4',
     });
 
+    const logoData = await getLogoDataUrl();
     const { inputs, results } = estimate;
     const curSymbol = currencyService.format(0, inputs.currency).split(' ')[0] || inputs.currency;
 
@@ -286,22 +321,39 @@ export class EstimateService {
     doc.setFillColor(15, 23, 42);
     doc.rect(0, 0, 210, 38, 'F');
 
-    // App Branding
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(18);
-    doc.setTextColor(255, 255, 255);
-    doc.text('FABRICIQ TEXTILE INTELLIGENCE', 14, 16);
+    // Official 3D FabricIQ Logo in Header
+    if (logoData) {
+      try {
+        doc.setFillColor(255, 255, 255);
+        doc.roundedRect(14, 5, 25, 25, 3, 3, 'F');
+        doc.setDrawColor(226, 232, 240);
+        doc.roundedRect(14, 5, 25, 25, 3, 3, 'D');
+        doc.addImage(logoData, 'PNG', 15.5, 6.5, 22, 22);
+      } catch {
+        // fallback
+      }
+    }
 
-    doc.setFontSize(9);
+    // App Branding in Header
+    const textStartX = logoData ? 43 : 14;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(16);
+    doc.setTextColor(255, 255, 255);
+    doc.text('FABRICIQ TEXTILE INTELLIGENCE', textStartX, 14);
+
+    doc.setFontSize(8.5);
     doc.setFont('helvetica', 'normal');
     doc.setTextColor(199, 210, 254);
-    doc.text('Commercial Fabric Costing, Yield Analysis & Official Quotation', 14, 23);
-    doc.text(`Quotation Ref: ${estimate.referenceNo}  |  Generated: ${estimate.createdAt}`, 14, 30);
+    doc.text('Smart Commercial Fabric Costing, Yield Analysis & Quotation Engine', textStartX, 20.5);
+    doc.text(`Quotation Ref: ${estimate.referenceNo}  |  Generated: ${estimate.createdAt}`, textStartX, 26.5);
 
-    doc.setFontSize(10);
+    // Status Badge
+    doc.setFillColor(30, 41, 59);
+    doc.roundedRect(148, 10, 48, 8, 2, 2, 'F');
+    doc.setFontSize(8);
     doc.setFont('helvetica', 'bold');
-    doc.setTextColor(99, 102, 241);
-    doc.text(`STATUS: ${estimate.status.toUpperCase()}`, 155, 23);
+    doc.setTextColor(103, 232, 249);
+    doc.text(`STATUS: ${estimate.status.toUpperCase()}`, 172, 15.5, { align: 'center' });
 
     doc.setTextColor(30, 41, 59);
 
@@ -464,7 +516,7 @@ export class EstimateService {
     doc.text('3. Physical consumption accounts for warp/weft crimp and multi-stage process yield losses.', 14, y + 11);
 
     // Signatures
-    y += 20;
+    y += 18;
     doc.setDrawColor(203, 213, 225);
     doc.line(14, y, 70, y);
     doc.line(130, y, 186, y);
@@ -474,6 +526,29 @@ export class EstimateService {
     doc.setTextColor(51, 65, 85);
     doc.text('FabricIQ Costing Engineer', 14, y + 4);
     doc.text('Authorized Commercial Signatory', 130, y + 4);
+
+    // Footer with FabricIQ Logo & Compliance
+    doc.setDrawColor(226, 232, 240);
+    doc.line(14, 281, 196, 281);
+
+    if (logoData) {
+      try {
+        doc.addImage(logoData, 'PNG', 14, 283, 6, 6);
+      } catch {
+        // fallback
+      }
+    }
+
+    doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'bold');
+    doc.setTextColor(30, 41, 59);
+    doc.text('FABRICIQ', logoData ? 22 : 14, 287.5);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(100, 116, 139);
+    doc.text('• Smart Textile Costing & Live Market Intelligence', logoData ? 37 : 29, 287.5);
+
+    doc.text('ISO 9001 & ASTM D3776 Textile Engineering Compliant', 196, 287.5, { align: 'right' });
 
     doc.save(`${estimate.referenceNo}_${estimate.customerName.replace(/[^a-zA-Z0-9]/g, '_')}.pdf`);
   }
