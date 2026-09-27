@@ -1,90 +1,90 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
-  <!-- Core Application & Costing Engine -->
+  <!-- Core Application & Deterministic Costing Engine -->
   <url>
-    <loc>https://fabriciq-peach.vercel.app/</loc>
+    <loc>https://fabriciqcost.com/</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#calculator</loc>
+    <loc>https://fabriciqcost.com/#calculator</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#market</loc>
+    <loc>https://fabriciqcost.com/#market-rates</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>hourly</changefreq>
-    <priority>0.9</priority>
+    <priority>0.95</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#tools</loc>
+    <loc>https://fabriciqcost.com/#tools</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <priority>0.85</priority>
   </url>
 
-  <!-- Informative Public Pages -->
+  <!-- Informational & Educational Textile Knowledge Base -->
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#about</loc>
-    <lastmod>2026-09-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://fabriciq-peach.vercel.app/#features</loc>
-    <lastmod>2026-09-28</lastmod>
-    <changefreq>monthly</changefreq>
-    <priority>0.8</priority>
-  </url>
-  <url>
-    <loc>https://fabriciq-peach.vercel.app/#knowledge</loc>
+    <loc>https://fabriciqcost.com/#textile-costing-guide</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.9</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#pricing</loc>
+    <loc>https://fabriciqcost.com/#about</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#contact</loc>
+    <loc>https://fabriciqcost.com/#features</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.85</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#faq</loc>
+    <loc>https://fabriciqcost.com/#pricing</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://fabriciqcost.com/#contact</loc>
+    <lastmod>2026-09-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.75</priority>
+  </url>
+  <url>
+    <loc>https://fabriciqcost.com/#faq</loc>
+    <lastmod>2026-09-28</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.8</priority>
   </url>
 
   <!-- Legal & Transparency Policies -->
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#privacy</loc>
+    <loc>https://fabriciqcost.com/#privacy</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#terms</loc>
+    <loc>https://fabriciqcost.com/#terms</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#cookies</loc>
+    <loc>https://fabriciqcost.com/#cookies</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
   <url>
-    <loc>https://fabriciq-peach.vercel.app/#disclaimer</loc>
+    <loc>https://fabriciqcost.com/#disclaimer</loc>
     <lastmod>2026-09-28</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>

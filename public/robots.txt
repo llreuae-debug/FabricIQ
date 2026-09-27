@@ -1,10 +1,16 @@
 # FabricIQ Robots.txt
-# Allows Google Search, AdSense, and Partner Crawlers
+# Official Technical & Canonical Domain: https://fabriciqcost.com/
+# Allows Search Engines, Answer Engines, and AI Crawlers
 
 User-agent: *
 Allow: /
+Disallow: /admin/
+Disallow: /api/
 
-# Explicit Google AdSense and Media Partners Crawler Permissions
+# Explicit Search & AI Crawler Permissions
+User-agent: Googlebot
+Allow: /
+
 User-agent: Mediapartners-Google
 Allow: /
 
@@ -14,8 +20,20 @@ Allow: /
 User-agent: AdsBot-Google-Mobile
 Allow: /
 
-User-agent: Googlebot
+User-agent: Bingbot
+Allow: /
+
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Applebot
 Allow: /
 
 # Sitemap Location
-Sitemap: https://fabriciq-peach.vercel.app/sitemap.xml
+Sitemap: https://fabriciqcost.com/sitemap.xml

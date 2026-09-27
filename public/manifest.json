@@ -3,6 +3,8 @@
   "short_name": "FabricIQ",
   "description": "Professional deterministic textile costing engine and live market rates platform.",
   "start_url": "/",
+  "scope": "/",
+  "id": "https://fabriciqcost.com/",
   "display": "standalone",
   "background_color": "#0B1220",
   "theme_color": "#0B1220",
@@ -26,13 +28,13 @@
     {
       "name": "Cost Calculator",
       "short_name": "Calculator",
-      "url": "/?tab=calculator",
+      "url": "/#calculator",
       "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
     },
     {
       "name": "Live Market Rates",
       "short_name": "Rates",
-      "url": "/?tab=market_rates",
+      "url": "/#market-rates",
       "icons": [{ "src": "/favicon.png", "sizes": "192x192" }]
     }
   ]

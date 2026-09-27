@@ -22,6 +22,7 @@ import { MobileBottomNav } from './components/MobileBottomNav';
 import { PwaInstallPrompt } from './components/PwaInstallPrompt';
 import { PublicPages, type PublicPageView } from './components/PublicPages';
 import { ConsentBanner } from './components/ConsentBanner';
+import { seoService } from './services/seoService';
 import { ShieldCheck, Sparkles, X, Gift } from 'lucide-react';
 import logoImg from './assets/logo.png';
 
@@ -90,6 +91,11 @@ export function App() {
       unsubNotif();
     };
   }, [currentLang]);
+
+  // Synchronize dynamic SEO, Open Graph, Canonical, and Schema.org metadata
+  useEffect(() => {
+    seoService.updatePageMetadata(activeTab);
+  }, [activeTab]);
 
   const handleSplashComplete = () => {
     setShowSplash(false);

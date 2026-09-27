@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   Building2, 
   ShieldCheck, 
@@ -13,12 +13,13 @@ import {
   Calculator, 
   Activity, 
   Cpu, 
-  Award,
-  Send,
-  ChevronRight,
-  Search
+  Award, 
+  Send, 
+  ChevronRight, 
+  Search 
 } from 'lucide-react';
 import { AdPlacement } from './AdPlacement';
+import { seoService } from '../services/seoService';
 
 export type PublicPageView = 
   | 'about' 
@@ -48,6 +49,31 @@ export const PublicPages: React.FC<PublicPagesProps> = ({
   const [activeView, setActiveView] = useState<PublicPageView>(initialView);
   const [searchKnowledge, setSearchKnowledge] = useState('');
   const [selectedArticleId, setSelectedArticleId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setActiveView(initialView);
+  }, [initialView]);
+
+  useEffect(() => {
+    if (selectedArticleId) {
+      const art = ARTICLES.find(a => a.id === selectedArticleId);
+      if (art) {
+        seoService.updatePageMetadata('knowledge', {
+          title: `${art.title} | FabricIQ`,
+          description: art.summary,
+          canonicalPath: `/textile-costing-guide#${art.id}`,
+          ogType: 'article',
+          breadcrumbs: [
+            { name: 'Home', path: '/' },
+            { name: 'Knowledge Base', path: '/textile-costing-guide' },
+            { name: art.title, path: `/textile-costing-guide#${art.id}` }
+          ]
+        });
+        return;
+      }
+    }
+    seoService.updatePageMetadata(activeView);
+  }, [activeView, selectedArticleId]);
 
   // Contact form state
   const [contactName, setContactName] = useState('');
