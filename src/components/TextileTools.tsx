@@ -63,7 +63,7 @@ export const TextileTools: React.FC<TextileToolsProps> = ({ initialTool }) => {
           </p>
         </div>
 
-        <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs overflow-x-auto scrollbar-none">
+        <div className="flex items-center bg-slate-950/90 p-1.5 rounded-2xl border border-slate-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] text-xs overflow-x-auto scrollbar-none gap-1">
           {[
             { id: 'converter', label: 'Yarn Converter' },
             { id: 'gsm', label: 'GSM & Weight' },
@@ -72,10 +72,10 @@ export const TextileTools: React.FC<TextileToolsProps> = ({ initialTool }) => {
             <button
               key={tab.id}
               onClick={() => setActiveSubTool(tab.id)}
-              className={`px-3 py-1.5 rounded-lg font-semibold whitespace-nowrap transition-colors ${
+              className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
                 activeSubTool === tab.id
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
+                  ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_4px_12px_rgba(79,70,229,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-indigo-400/50 -translate-y-0.5 scale-[1.02]'
+                  : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
               }`}
             >
               {tab.label}

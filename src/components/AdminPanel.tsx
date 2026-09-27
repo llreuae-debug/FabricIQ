@@ -291,14 +291,14 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
         </div>
       </div>
 
-      {/* Admin Navigation Tabs */}
-      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-slate-900/60 border border-slate-800 overflow-x-auto">
+      {/* 3D Admin Navigation Tabs Dock */}
+      <div className="flex items-center gap-1.5 p-1.5 rounded-2xl bg-gradient-to-b from-slate-900/90 via-slate-950/95 to-slate-950/90 border border-slate-800 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.08)] backdrop-blur-xl overflow-x-auto scrollbar-thin">
         <button
           onClick={() => setActiveTab('members')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
             activeTab === 'members'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? 'bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 text-white shadow-[0_6px_20px_rgba(37,99,235,0.45),inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.25)] border border-blue-400/60 scale-[1.02] -translate-y-0.5'
+              : 'bg-slate-900/60 hover:bg-slate-800/90 text-slate-300 hover:text-white border border-slate-800/80 hover:border-slate-700 shadow-[0_2px_6px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-0.5'
           }`}
         >
           <Users className="w-3.5 h-3.5" />
@@ -307,16 +307,16 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
 
         <button
           onClick={() => setActiveTab('referrals')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
             activeTab === 'referrals'
-              ? 'bg-cyan-600 text-white shadow-lg shadow-cyan-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? 'bg-gradient-to-b from-cyan-500 via-cyan-600 to-cyan-700 text-white shadow-[0_6px_20px_rgba(6,182,212,0.45),inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.25)] border border-cyan-400/60 scale-[1.02] -translate-y-0.5'
+              : 'bg-slate-900/60 hover:bg-slate-800/90 text-slate-300 hover:text-white border border-slate-800/80 hover:border-slate-700 shadow-[0_2px_6px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-0.5'
           }`}
         >
           <Gift className="w-3.5 h-3.5" />
           <span>Referrals & Rewards ({totalReferralsCount})</span>
           {suspiciousReferralsCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-extrabold">
+            <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-slate-950 text-[10px] font-extrabold shadow-md">
               {suspiciousReferralsCount}
             </span>
           )}
@@ -324,10 +324,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
 
         <button
           onClick={() => setActiveTab('admin_audit')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
             activeTab === 'admin_audit'
-              ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_6px_20px_rgba(99,102,241,0.45),inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.25)] border border-indigo-400/60 scale-[1.02] -translate-y-0.5'
+              : 'bg-slate-900/60 hover:bg-slate-800/90 text-slate-300 hover:text-white border border-slate-800/80 hover:border-slate-700 shadow-[0_2px_6px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-0.5'
           }`}
         >
           <Clock className="w-3.5 h-3.5" />
@@ -336,10 +336,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
 
         <button
           onClick={() => setActiveTab('rates')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
             activeTab === 'rates'
-              ? 'bg-blue-600 text-white shadow-lg shadow-blue-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? 'bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 text-white shadow-[0_6px_20px_rgba(37,99,235,0.45),inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.25)] border border-blue-400/60 scale-[1.02] -translate-y-0.5'
+              : 'bg-slate-900/60 hover:bg-slate-800/90 text-slate-300 hover:text-white border border-slate-800/80 hover:border-slate-700 shadow-[0_2px_6px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-0.5'
           }`}
         >
           <Database className="w-3.5 h-3.5" />
@@ -348,10 +348,10 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
 
         <button
           onClick={() => setActiveTab('forex')}
-          className={`flex items-center gap-2 px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+          className={`flex items-center gap-2 px-4 py-2.5 rounded-xl text-xs font-bold transition-all duration-200 whitespace-nowrap cursor-pointer ${
             activeTab === 'forex'
-              ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-500/20'
-              : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800'
+              ? 'bg-gradient-to-b from-emerald-500 via-emerald-600 to-emerald-700 text-white shadow-[0_6px_20px_rgba(16,185,129,0.45),inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.25)] border border-emerald-400/60 scale-[1.02] -translate-y-0.5'
+              : 'bg-slate-900/60 hover:bg-slate-800/90 text-slate-300 hover:text-white border border-slate-800/80 hover:border-slate-700 shadow-[0_2px_6px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:-translate-y-0.5'
           }`}
         >
           <Coins className="w-3.5 h-3.5" />

@@ -429,15 +429,17 @@ export const Calculator: React.FC<CalculatorProps> = ({
         </div>
       </div>
 
-      {/* Preset Picker & Structure Selector Header */}
-      <div className="grid grid-cols-1 md:grid-cols-12 gap-3 p-4 rounded-2xl bg-slate-900/60 border border-slate-800">
-        <div className="md:col-span-4 flex items-center gap-2">
-          <Layers className="w-4 h-4 text-indigo-400" />
-          <span className="text-xs font-semibold text-slate-300">Fabric Preset:</span>
+      {/* Preset Picker & Structure Selector Header in 3D Card */}
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-3.5 p-4 rounded-2xl bg-gradient-to-b from-slate-900/90 via-slate-900/80 to-slate-950/90 border border-slate-800 shadow-[0_8px_24px_rgba(0,0,0,0.35),inset_0_1px_1px_rgba(255,255,255,0.06)]">
+        <div className="md:col-span-4 flex items-center gap-2.5">
+          <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-indigo-500/20 to-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400 shadow-[0_2px_8px_rgba(99,102,241,0.2),inset_0_1px_1px_rgba(255,255,255,0.2)]">
+            <Layers className="w-4 h-4" />
+          </div>
+          <span className="text-xs font-bold text-slate-300">Preset:</span>
           <select
             value={selectedPresetId}
             onChange={(e) => applyPreset(e.target.value)}
-            className="flex-1 px-3 py-1.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-slate-100 focus:outline-none focus:border-indigo-500"
+            className="flex-1 px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs font-semibold text-slate-100 focus:outline-none focus:border-indigo-500 shadow-inner"
           >
             {FABRIC_PRESETS.map((p) => (
               <option key={p.id} value={p.id}>
@@ -447,79 +449,83 @@ export const Calculator: React.FC<CalculatorProps> = ({
           </select>
         </div>
 
-        {/* Structure Selector (Woven vs Knitted) */}
-        <div className="md:col-span-8 flex flex-wrap items-center justify-end gap-2">
-          <span className="text-xs font-semibold text-slate-400">Structure:</span>
-          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-            <button
-              onClick={() => setInputs({ ...inputs, fabricStructure: 'woven' })}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                inputs.fabricStructure === 'woven'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Woven Fabric (Loom)
-            </button>
-            <button
-              onClick={() => setInputs({ ...inputs, fabricStructure: 'knitted' })}
-              className={`px-3 py-1 rounded-lg font-semibold transition-all ${
-                inputs.fabricStructure === 'knitted'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Knitted Fabric (Circular/Flat)
-            </button>
+        {/* Structure Selector (Woven vs Knitted) in 3D Segmented Control */}
+        <div className="md:col-span-8 flex flex-wrap items-center justify-end gap-3">
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Structure:</span>
+            <div className="p-1 rounded-xl bg-slate-950/90 border border-slate-800/90 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] flex items-center gap-1">
+              <button
+                onClick={() => setInputs({ ...inputs, fabricStructure: 'woven' })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  inputs.fabricStructure === 'woven'
+                    ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_3px_10px_rgba(79,70,229,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-indigo-400/50 -translate-y-0.5 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                }`}
+              >
+                Woven (Loom)
+              </button>
+              <button
+                onClick={() => setInputs({ ...inputs, fabricStructure: 'knitted' })}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  inputs.fabricStructure === 'knitted'
+                    ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_3px_10px_rgba(79,70,229,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-indigo-400/50 -translate-y-0.5 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                }`}
+              >
+                Knitted (Circular/Flat)
+              </button>
+            </div>
           </div>
 
-          <span className="text-xs font-semibold text-slate-400 ml-2">Method:</span>
-          <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800 text-xs">
-            <button
-              onClick={() => setInputs({ ...inputs, costingMethod: 'engineered' })}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                inputs.costingMethod === 'engineered'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Physical Engineering
-            </button>
-            <button
-              onClick={() => setInputs({ ...inputs, costingMethod: 'direct_grey_meter' })}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                inputs.costingMethod === 'direct_grey_meter'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Grey Rate/m
-            </button>
-            <button
-              onClick={() => setInputs({ ...inputs, costingMethod: 'direct_grey_kg' })}
-              className={`px-2.5 py-1 rounded-lg font-semibold transition-all ${
-                inputs.costingMethod === 'direct_grey_kg'
-                  ? 'bg-indigo-600 text-white shadow-sm'
-                  : 'text-slate-400 hover:text-white'
-              }`}
-            >
-              Grey Rate/kg
-            </button>
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Method:</span>
+            <div className="p-1 rounded-xl bg-slate-950/90 border border-slate-800/90 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] flex items-center gap-1">
+              <button
+                onClick={() => setInputs({ ...inputs, costingMethod: 'engineered' })}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  inputs.costingMethod === 'engineered'
+                    ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_3px_10px_rgba(79,70,229,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-indigo-400/50 -translate-y-0.5 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                }`}
+              >
+                Physical Engineering
+              </button>
+              <button
+                onClick={() => setInputs({ ...inputs, costingMethod: 'direct_grey_meter' })}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  inputs.costingMethod === 'direct_grey_meter'
+                    ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_3px_10px_rgba(79,70,229,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-indigo-400/50 -translate-y-0.5 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                }`}
+              >
+                Grey Rate/m
+              </button>
+              <button
+                onClick={() => setInputs({ ...inputs, costingMethod: 'direct_grey_kg' })}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-bold transition-all ${
+                  inputs.costingMethod === 'direct_grey_kg'
+                    ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_3px_10px_rgba(79,70,229,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-indigo-400/50 -translate-y-0.5 scale-[1.02]'
+                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/60'
+                }`}
+              >
+                Grey Rate/kg
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Navigation Sub-Tabs for Step-by-Step Deterministic Flow */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none border-b border-slate-800">
+      {/* 3D Floating Navigation Sub-Tabs Dock */}
+      <div className="p-1.5 rounded-2xl bg-gradient-to-b from-slate-900/95 via-slate-950/95 to-slate-950/90 border border-slate-800/90 shadow-[0_8px_32px_rgba(0,0,0,0.4),inset_0_1px_1px_rgba(255,255,255,0.08)] backdrop-blur-xl flex items-center gap-1.5 overflow-x-auto scrollbar-thin scrollbar-thumb-slate-800 scrollbar-track-transparent">
         {[
-          { id: 'physical', label: '1. Physical Specs', icon: Sliders },
-          { id: 'yield', label: '2. Multi-Stage Yield', icon: Boxes },
-          { id: 'rates', label: '3. Yarn & Weaving/Knit', icon: Settings2 },
-          { id: 'processing', label: '4. Processing & Dyeing', icon: Sparkles },
-          { id: 'printing', label: '5. Color-Wise Printing', icon: Palette },
-          { id: 'logistics', label: '6. Packaging & Logistics', icon: Package },
-          { id: 'commercial', label: '7. Margin & Tax', icon: Percent },
-          { id: 'audit', label: '8. Formula Audit & Waterfall', icon: FileSpreadsheet },
+          { id: 'physical', num: '1', label: 'Physical Specs', icon: Sliders },
+          { id: 'yield', num: '2', label: 'Multi-Stage Yield', icon: Boxes },
+          { id: 'rates', num: '3', label: 'Yarn & Weaving/Knit', icon: Settings2 },
+          { id: 'processing', num: '4', label: 'Processing & Dyeing', icon: Sparkles },
+          { id: 'printing', num: '5', label: 'Color-Wise Printing', icon: Palette },
+          { id: 'logistics', num: '6', label: 'Packaging & Logistics', icon: Package },
+          { id: 'commercial', num: '7', label: 'Margin & Tax', icon: Percent },
+          { id: 'audit', num: '8', label: 'Formula Audit & Waterfall', icon: FileSpreadsheet },
         ].map((tab) => {
           const Icon = tab.icon;
           const isActive = activeTabSection === tab.id;
@@ -527,14 +533,26 @@ export const Calculator: React.FC<CalculatorProps> = ({
             <button
               key={tab.id}
               onClick={() => setActiveTabSection(tab.id as any)}
-              className={`flex items-center gap-2 px-3.5 py-2.5 rounded-t-xl font-semibold text-xs transition-all whitespace-nowrap border-b-2 ${
+              className={`group relative flex items-center gap-2 px-3.5 py-2.5 rounded-xl font-bold text-xs transition-all duration-200 whitespace-nowrap cursor-pointer select-none ${
                 isActive
-                  ? 'border-indigo-500 bg-slate-900/90 text-indigo-300'
-                  : 'border-transparent text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+                  ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_6px_20px_rgba(79,70,229,0.45),inset_0_1px_1px_rgba(255,255,255,0.4),inset_0_-2px_4px_rgba(0,0,0,0.25)] border border-indigo-400/60 scale-[1.02] -translate-y-0.5'
+                  : 'bg-slate-900/60 hover:bg-slate-800/90 text-slate-300 hover:text-white border border-slate-800/80 hover:border-slate-700 shadow-[0_2px_6px_rgba(0,0,0,0.2),inset_0_1px_0_rgba(255,255,255,0.05)] hover:shadow-[0_4px_14px_rgba(0,0,0,0.35)] hover:-translate-y-0.5 active:translate-y-0'
               }`}
             >
-              <Icon className="w-3.5 h-3.5" />
+              <span
+                className={`w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-black transition-colors ${
+                  isActive
+                    ? 'bg-white/25 text-white border border-white/40 shadow-inner'
+                    : 'bg-slate-800/90 text-slate-400 group-hover:text-slate-200 group-hover:bg-slate-700/80 border border-slate-700/50'
+                }`}
+              >
+                {tab.num}
+              </span>
+              <Icon className={`w-3.5 h-3.5 transition-transform group-hover:scale-110 ${isActive ? 'text-white' : 'text-indigo-400'}`} />
               <span>{tab.label}</span>
+              {isActive && (
+                <span className="absolute bottom-[-1px] left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-cyan-300 shadow-[0_0_8px_#22d3ee]" />
+              )}
             </button>
           );
         })}
