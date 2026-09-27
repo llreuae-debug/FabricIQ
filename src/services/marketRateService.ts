@@ -1,4 +1,4 @@
-import type { MarketRate, AuditLogEntry, Supplier, RateCategory } from '../types';
+import type { MarketRate, AuditLogEntry, Supplier, RateCategory, RateStatus } from '../types';
 
 const INITIAL_RATES: MarketRate[] = [
   // 1. Cotton Yarn
@@ -748,7 +748,7 @@ export class MarketRateService {
   public updateRate(
     id: string,
     newRateValue: number,
-    status: 'LIVE' | 'MANUAL' | 'ESTIMATED',
+    status: RateStatus,
     source: string,
     user: string = 'Admin User',
     notes?: string

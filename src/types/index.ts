@@ -19,7 +19,7 @@ export interface LanguageConfig {
   dir: 'ltr' | 'rtl';
 }
 
-export type RateStatus = 'LIVE' | 'MANUAL' | 'ESTIMATED';
+export type RateStatus = 'LIVE' | 'VERIFIED' | 'MANUAL' | 'STALE' | 'UNAVAILABLE';
 
 export type RateCategory = 
   | 'cotton_yarn'
@@ -34,11 +34,58 @@ export type RateCategory =
   | 'chemicals'
   | 'energy'
   | 'transport'
+  | 'packaging'
   | 'forex';
 
 export interface RateHistoryPoint {
   date: string;
   rate: number;
+  high?: number;
+  low?: number;
+}
+
+export interface LiveFXData {
+  currencyPair: 'USD/PKR';
+  currentRate: number;
+  bidRate: number;
+  askRate: number;
+  midMarketRate: number;
+  previousRate: number;
+  changeAmount: number;
+  changePercent: number;
+  source: string;
+  secondarySource?: string;
+  status: RateStatus;
+  lastUpdated: string;
+  nextRefresh: string;
+  nextRefreshSecondsRemaining: number;
+  rateId: string;
+  isValidationRequired?: boolean;
+  validationVariancePct?: number;
+  lastVerifiedRate?: number;
+  lastVerifiedTimestamp?: string;
+  errorMessage?: string;
+  isFallback: boolean;
+  history1d?: RateHistoryPoint[];
+  history7d: RateHistoryPoint[];
+  history30d: RateHistoryPoint[];
+  history90d?: RateHistoryPoint[];
+  history1y?: RateHistoryPoint[];
+}
+
+export interface ImmutableRateSnapshot {
+  rateId: string;
+  rateName: string;
+  rateValue: number;
+  unit: string;
+  currency: CurrencyCode;
+  source: string;
+  sourceType: 'LIVE_API' | 'BENCHMARK' | 'MANUAL_ADMIN';
+  timestamp: string;
+  status: RateStatus;
+  usdPkrFxRate: number;
+  enteredBy?: string;
+  overrideReason?: string;
 }
 
 export interface MarketRate {
@@ -54,9 +101,14 @@ export interface MarketRate {
   source: string;
   status: RateStatus;
   lastUpdated: string;
+  rateId?: string;
   verifiedBy?: string;
+  enteredBy?: string;
+  overrideReason?: string;
   history7d: RateHistoryPoint[];
   history30d: RateHistoryPoint[];
+  history90d?: RateHistoryPoint[];
+  history1y?: RateHistoryPoint[];
   notes?: string;
 }
 

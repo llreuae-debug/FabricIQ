@@ -18,7 +18,7 @@ import {
   Award,
   Sparkles
 } from 'lucide-react';
-import type { CurrencyCode, MarketRate, RateCategory, User, Referral, MembershipType, AdminAuditLog } from '../types';
+import type { CurrencyCode, MarketRate, RateCategory, RateStatus, User, Referral, MembershipType, AdminAuditLog } from '../types';
 import { marketRateService } from '../services/marketRateService';
 import { currencyService, CURRENCY_MAP } from '../services/currencyService';
 import { authService } from '../services/authService';
@@ -75,7 +75,7 @@ export const AdminPanel: React.FC<AdminPanelProps> = ({ onRatesUpdated }) => {
   // Edit Rate Modal State
   const [editingRate, setEditingRate] = useState<MarketRate | null>(null);
   const [overrideRateVal, setOverrideRateVal] = useState<number>(0);
-  const [overrideStatus, setOverrideStatus] = useState<'LIVE' | 'MANUAL' | 'ESTIMATED'>('MANUAL');
+  const [overrideStatus, setOverrideStatus] = useState<RateStatus>('MANUAL');
   const [overrideSource, setOverrideSource] = useState<string>('');
   const [adminNotes, setAdminNotes] = useState<string>('');
   const [actionNotice, setActionNotice] = useState<string>('');

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -12,7 +12,10 @@ import {
   Zap, 
   Clock, 
   ShieldCheck, 
-  ChevronRight 
+  ChevronRight,
+  RefreshCw,
+  AlertTriangle,
+  DollarSign
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -23,7 +26,7 @@ import {
   Tooltip, 
   CartesianGrid 
 } from 'recharts';
-import type { CurrencyCode } from '../types';
+import type { CurrencyCode, LiveFXData } from '../types';
 import { currencyService } from '../services/currencyService';
 import { marketRateService } from '../services/marketRateService';
 import { estimateService } from '../services/estimateService';
@@ -60,6 +63,24 @@ export const Dashboard: React.FC<DashboardProps> = ({
   const savedEstimates = estimateService.getAll().slice(0, 4);
   const currentUser = authService.getCurrentUser();
   const referralProgress = referralService.getMilestoneProgress(currentUser);
+
+  // Live USD/PKR FX Engine State
+  const [liveFX, setLiveFX] = useState<LiveFXData>(currencyService.getLiveFX());
+  const [isFXRefreshing, setIsFXRefreshing] = useState<boolean>(false);
+
+  useEffect(() => {
+    const unsub = currencyService.subscribe((fx) => setLiveFX(fx));
+    return unsub;
+  }, []);
+
+  const handleManualFXRefresh = async () => {
+    setIsFXRefreshing(true);
+    try {
+      await currencyService.fetchLiveUSDToPKR(true);
+    } finally {
+      setTimeout(() => setIsFXRefreshing(false), 600);
+    }
+  };
 
   // Selected commodity for interactive chart
   const [selectedChartRateId, setSelectedChartRateId] = useState<string>('rate-yarn-20-carded');
@@ -283,6 +304,158 @@ export const Dashboard: React.FC<DashboardProps> = ({
             {referralProgress.isLifetime ? '🏆 Lifetime Tier Active' : `Next: ${referralProgress.nextReward}`}
           </span>
         </div>
+      </div>
+
+      {/* DEDICATED USD / PKR LIVE EXCHANGE RATE ENGINE CARD */}
+      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-white via-slate-50 to-blue-50/40 dark:from-[#09132b] dark:via-[#060c1d] dark:to-[#02050e] border border-blue-200 dark:border-[#00d2ff]/30 p-5 sm:p-6 shadow-xl dark:shadow-2xl shadow-blue-900/10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+          {/* Left: Prominent Live Currency Indicator */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-2.5">
+              <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-900/90 dark:bg-slate-950 border border-slate-700/80 text-xs font-black text-white shadow-inner">
+                <DollarSign className="w-3.5 h-3.5 text-[#00d2ff]" />
+                <span>USD / PKR</span>
+              </div>
+
+              {/* Status Badge */}
+              <div
+                className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black tracking-wider uppercase ${
+                  liveFX.status === 'LIVE'
+                    ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/40 shadow-sm shadow-emerald-500/20'
+                    : liveFX.status === 'VERIFIED'
+                    ? 'bg-blue-500/15 text-blue-600 dark:text-cyan-400 border border-blue-500/40'
+                    : liveFX.status === 'MANUAL'
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/40'
+                    : 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/40'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    liveFX.status === 'LIVE'
+                      ? 'bg-emerald-500 animate-live-pulse'
+                      : liveFX.status === 'MANUAL'
+                      ? 'bg-amber-500'
+                      : 'bg-rose-500'
+                  }`}
+                />
+                <span>{liveFX.status}</span>
+              </div>
+
+              {liveFX.isFallback && (
+                <div className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 text-[10px] font-bold">
+                  <AlertTriangle className="w-3 h-3" />
+                  <span>USING LAST VERIFIED RATE</span>
+                </div>
+              )}
+            </div>
+
+            <div className="flex items-baseline gap-3">
+              <span className="text-3xl sm:text-4xl lg:text-5xl font-black text-slate-900 dark:text-white font-mono tracking-tight">
+                1 USD = ₨ {liveFX.currentRate.toFixed(2)}
+              </span>
+              <div
+                className={`flex items-center gap-0.5 text-sm font-bold ${
+                  liveFX.changePercent >= 0
+                    ? 'text-emerald-600 dark:text-emerald-400'
+                    : 'text-rose-600 dark:text-rose-400'
+                }`}
+              >
+                {liveFX.changePercent >= 0 ? (
+                  <TrendingUp className="w-4 h-4" />
+                ) : (
+                  <TrendingDown className="w-4 h-4" />
+                )}
+                <span>
+                  {liveFX.changePercent >= 0 ? `+${liveFX.changePercent}%` : `${liveFX.changePercent}%`}
+                </span>
+                <span className="text-xs opacity-75 ml-0.5">
+                  ({liveFX.changeAmount >= 0 ? `+₨ ${liveFX.changeAmount.toFixed(2)}` : `-₨ ${Math.abs(liveFX.changeAmount).toFixed(2)}`})
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-slate-600 dark:text-slate-400">
+              <span>
+                Source: <strong className="text-slate-900 dark:text-slate-200">{liveFX.source}</strong>
+              </span>
+              <span>•</span>
+              <span>
+                Rate ID: <span className="font-mono text-cyan-600 dark:text-cyan-400 font-semibold">{liveFX.rateId}</span>
+              </span>
+            </div>
+          </div>
+
+          {/* Right: Live Telemetry Grid & Refresh Button */}
+          <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 text-xs">
+              <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Bid Rate</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                  ₨ {liveFX.bidRate.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Ask Rate</span>
+                <span className="font-mono font-bold text-slate-800 dark:text-slate-200">
+                  ₨ {liveFX.askRate.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Mid-Market</span>
+                <span className="font-mono font-bold text-cyan-600 dark:text-cyan-400">
+                  ₨ {liveFX.midMarketRate.toFixed(2)}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800">
+                <span className="text-[10px] text-slate-400 font-semibold block uppercase">Updated</span>
+                <span className="font-mono text-slate-700 dark:text-slate-300">
+                  {liveFX.lastUpdated}
+                </span>
+              </div>
+
+              <div className="p-2.5 rounded-xl bg-white/80 dark:bg-slate-950/80 border border-slate-200 dark:border-slate-800 col-span-2 sm:col-span-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-[10px] text-slate-400 font-semibold block uppercase">Auto Refresh</span>
+                  <span className="font-mono text-[10px] text-[#00d2ff] font-bold">
+                    {Math.floor(liveFX.nextRefreshSecondsRemaining / 60)}m {liveFX.nextRefreshSecondsRemaining % 60}s
+                  </span>
+                </div>
+                <span className="font-mono text-[11px] text-slate-700 dark:text-slate-300">
+                  Next: {liveFX.nextRefresh}
+                </span>
+              </div>
+            </div>
+
+            {/* Manual Refresh Now Button */}
+            <button
+              onClick={handleManualFXRefresh}
+              disabled={isFXRefreshing}
+              className="flex items-center justify-center gap-2 px-4 py-3 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-bold text-xs shadow-lg shadow-blue-500/25 transition-all active:scale-95 disabled:opacity-50 cursor-pointer shrink-0"
+              title="Manually query FX feed now"
+            >
+              <RefreshCw className={`w-4 h-4 ${isFXRefreshing ? 'animate-spin' : ''}`} />
+              <span>↻ Refresh Now</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Fallback notification banner if live endpoint is unreachable */}
+        {liveFX.status === 'STALE' && (
+          <div className="mt-4 p-3 rounded-xl bg-amber-500/15 border border-amber-500/30 text-xs text-amber-700 dark:text-amber-300 flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <AlertTriangle className="w-4 h-4 text-amber-500 shrink-0" />
+              <span>
+                <strong>⚠️ LIVE RATE UNAVAILABLE:</strong> Last verified rate ₨ {liveFX.lastVerifiedRate?.toFixed(2)} ({liveFX.lastVerifiedTimestamp}). Source: {liveFX.source}.
+              </span>
+            </div>
+            <span className="font-bold uppercase tracking-wider text-[10px] px-2 py-0.5 rounded bg-amber-500/20 text-amber-400">
+              USING LAST VERIFIED RATE
+            </span>
+          </div>
+        )}
       </div>
 
       {/* TEXTILE MARKET TODAY */}

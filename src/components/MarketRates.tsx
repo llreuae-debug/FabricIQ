@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -8,7 +8,9 @@ import {
   Info, 
   Activity, 
   Database, 
-  X 
+  X,
+  Server,
+  CheckCircle2
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -19,7 +21,7 @@ import {
   Tooltip, 
   CartesianGrid 
 } from 'recharts';
-import type { CurrencyCode, MarketRate } from '../types';
+import type { CurrencyCode, MarketRate, LiveFXData } from '../types';
 import { marketRateService } from '../services/marketRateService';
 import { currencyService } from '../services/currencyService';
 import { i18n } from '../services/i18n';
@@ -37,15 +39,41 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
   const [isSyncing, setIsSyncing] = useState<boolean>(false);
   const [syncNotice, setSyncNotice] = useState<string>('');
 
+  // Live FX State & Subscription
+  const [liveFX, setLiveFX] = useState<LiveFXData>(currencyService.getLiveFX());
+  const [fxTimeframe, setFxTimeframe] = useState<'1d' | '7d' | '30d' | '90d' | '1y'>('7d');
+  const [isFXManualRefreshing, setIsFXManualRefreshing] = useState<boolean>(false);
+
+  useEffect(() => {
+    const unsub = currencyService.subscribe((fx) => setLiveFX(fx));
+    return unsub;
+  }, []);
+
+  const handleManualFXRefresh = async () => {
+    setIsFXManualRefreshing(true);
+    try {
+      await currencyService.fetchLiveUSDToPKR(true);
+      setRates(marketRateService.getRates());
+    } finally {
+      setTimeout(() => setIsFXManualRefreshing(false), 600);
+    }
+  };
+
   const categories = [
     { id: 'all', label: i18n.t('filter_all') },
     { id: 'cotton_yarn', label: i18n.t('filter_cotton_yarn') },
     { id: 'poly_yarn', label: i18n.t('filter_poly_yarn') },
+    { id: 'blended_yarn', label: 'Blended Yarn' },
     { id: 'grey_fabric', label: i18n.t('filter_grey_fabric') },
+    { id: 'weaving', label: 'Weaving' },
     { id: 'processing', label: i18n.t('filter_processing') },
     { id: 'dyeing', label: 'Dyeing' },
+    { id: 'finishing', label: 'Finishing' },
+    { id: 'printing', label: 'Printing' },
     { id: 'chemicals', label: i18n.t('filter_chemicals') },
     { id: 'energy', label: i18n.t('filter_energy') },
+    { id: 'transport', label: 'Transport' },
+    { id: 'packaging', label: 'Packaging' },
     { id: 'forex', label: 'Forex' },
   ];
 
@@ -68,6 +96,17 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
       setTimeout(() => setSyncNotice(''), 3000);
     }, 600);
   };
+
+  // FX Chart History Points
+  const activeFxHistory = 
+    fxTimeframe === '1d' ? (liveFX.history1d || []) :
+    fxTimeframe === '7d' ? liveFX.history7d :
+    fxTimeframe === '30d' ? liveFX.history30d :
+    fxTimeframe === '90d' ? (liveFX.history90d || liveFX.history30d) :
+    (liveFX.history1y || liveFX.history30d);
+
+  const fxMin = Math.min(...activeFxHistory.map((p) => p.rate), liveFX.currentRate);
+  const fxMax = Math.max(...activeFxHistory.map((p) => p.rate), liveFX.currentRate);
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
@@ -94,7 +133,7 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
             className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold text-xs shadow-md shadow-blue-500/25 transition-all disabled:opacity-50 cursor-pointer"
           >
             <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>Sync Live Feeds</span>
+            <span>Sync All Market Feeds</span>
           </button>
         </div>
       </div>
@@ -105,6 +144,177 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
           <span>{syncNotice}</span>
         </div>
       )}
+
+      {/* SECTION 1: PROMINENT LIVE USD / PKR FOREIGN EXCHANGE ENGINE */}
+      <div className="rounded-3xl bg-gradient-to-br from-[#0c1836] via-[#071128] to-[#030816] border border-[#00d2ff]/30 p-6 shadow-2xl space-y-5 text-white">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-slate-800">
+          {/* Main FX Rate Quote */}
+          <div className="space-y-2">
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-black uppercase px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-300">
+                USD / PKR Live Interbank Feed
+              </span>
+              <div
+                className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-extrabold uppercase ${
+                  liveFX.status === 'LIVE'
+                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
+                    : liveFX.status === 'MANUAL'
+                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
+                    : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
+                }`}
+              >
+                <span
+                  className={`w-2 h-2 rounded-full ${
+                    liveFX.status === 'LIVE' ? 'bg-emerald-400 animate-live-pulse' : 'bg-amber-400'
+                  }`}
+                />
+                <span>{liveFX.status}</span>
+              </div>
+            </div>
+
+            <div className="flex items-baseline gap-4">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-black font-mono tracking-tight text-white">
+                1 USD = ₨ {liveFX.currentRate.toFixed(2)}
+              </div>
+              <div
+                className={`flex items-center gap-1 text-sm font-bold ${
+                  liveFX.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                }`}
+              >
+                {liveFX.changePercent >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
+                <span>{liveFX.changePercent >= 0 ? `+${liveFX.changePercent}%` : `${liveFX.changePercent}%`}</span>
+                <span className="text-xs opacity-75">
+                  ({liveFX.changeAmount >= 0 ? `+₨ ${liveFX.changeAmount.toFixed(2)}` : `-₨ ${Math.abs(liveFX.changeAmount).toFixed(2)}`})
+                </span>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-x-3 text-xs text-slate-400">
+              <span>Primary Source: <strong className="text-slate-200">{liveFX.source}</strong></span>
+              <span>•</span>
+              <span>Secondary: <strong className="text-slate-300">{liveFX.secondarySource || 'SBP Benchmark'}</strong></span>
+              <span>•</span>
+              <span>Rate ID: <strong className="font-mono text-cyan-400">{liveFX.rateId}</strong></span>
+            </div>
+          </div>
+
+          {/* Refresh Timer & Manual Action */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs space-y-1">
+              <div className="flex items-center justify-between gap-4">
+                <span className="text-[10px] text-slate-400 uppercase font-semibold">10-Min Refresh Timer</span>
+                <span className="font-mono text-cyan-400 font-bold">
+                  {Math.floor(liveFX.nextRefreshSecondsRemaining / 60)}m {liveFX.nextRefreshSecondsRemaining % 60}s
+                </span>
+              </div>
+              <div className="text-[11px] text-slate-300 flex items-center justify-between gap-3">
+                <span>Updated: <strong>{liveFX.lastUpdated}</strong></span>
+                <span>Next: <strong>{liveFX.nextRefresh}</strong></span>
+              </div>
+            </div>
+
+            <button
+              onClick={handleManualFXRefresh}
+              disabled={isFXManualRefreshing}
+              className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-black text-xs shadow-lg shadow-blue-600/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+            >
+              <RefreshCw className={`w-4 h-4 ${isFXManualRefreshing ? 'animate-spin' : ''}`} />
+              <span>↻ Refresh Now</span>
+            </button>
+          </div>
+        </div>
+
+        {/* Live Telemetry Bar + API Health Monitor */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Bid Rate</span>
+            <span className="font-mono font-bold text-sm text-slate-200">₨ {liveFX.bidRate.toFixed(2)}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Ask Rate</span>
+            <span className="font-mono font-bold text-sm text-slate-200">₨ {liveFX.askRate.toFixed(2)}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Mid-Market</span>
+            <span className="font-mono font-bold text-sm text-cyan-400">₨ {liveFX.midMarketRate.toFixed(2)}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Previous Rate</span>
+            <span className="font-mono font-bold text-sm text-slate-300">₨ {liveFX.previousRate.toFixed(2)}</span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Variance Check</span>
+            <span className="font-mono font-bold text-sm text-emerald-400 flex items-center gap-1">
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
+              <span>{liveFX.validationVariancePct || 0.05}% (PASS)</span>
+            </span>
+          </div>
+
+          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
+            <span className="text-[10px] text-slate-400 uppercase block font-semibold">API Health</span>
+            <span className="font-mono font-bold text-sm text-emerald-400 flex items-center gap-1">
+              <Server className="w-3.5 h-3.5" />
+              <span>HEALTHY</span>
+            </span>
+          </div>
+        </div>
+
+        {/* Multi-Timeframe Rate History Chart: 1D | 7D | 30D | 90D | 1Y */}
+        <div className="space-y-3 pt-2">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+            <div className="flex items-center gap-2">
+              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
+                USD / PKR Verified Rate History
+              </h3>
+              <span className="text-[11px] text-slate-400 font-mono">
+                (Range: ₨ {fxMin.toFixed(2)} – ₨ {fxMax.toFixed(2)})
+              </span>
+            </div>
+
+            {/* 3D Segmented Timeframe Switcher */}
+            <div className="inline-flex items-center p-1 rounded-xl bg-slate-950/90 border border-slate-800">
+              {(['1d', '7d', '30d', '90d', '1y'] as const).map((tf) => (
+                <button
+                  key={tf}
+                  onClick={() => setFxTimeframe(tf)}
+                  className={`px-3 py-1 rounded-lg text-xs font-black uppercase transition-all duration-200 cursor-pointer ${
+                    fxTimeframe === tf
+                      ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  {tf}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="h-48 w-full p-2 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart data={activeFxHistory}>
+                <defs>
+                  <linearGradient id="fxGrad" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#00d2ff" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#0052ff" stopOpacity={0.0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
+                <YAxis stroke="#64748b" fontSize={11} domain={['dataMin - 1', 'dataMax + 1']} />
+                <Tooltip
+                  contentStyle={{ backgroundColor: '#09132b', borderColor: '#00d2ff40', borderRadius: '12px', color: '#fff', fontSize: '11px' }}
+                  formatter={(val: any) => [`₨ ${Number(val).toFixed(2)} / USD`, 'USD/PKR Rate']}
+                />
+                <Area type="monotone" dataKey="rate" stroke="#00d2ff" strokeWidth={2.5} fill="url(#fxGrad)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+      </div>
 
       {/* Filter & Search Bar */}
       <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">

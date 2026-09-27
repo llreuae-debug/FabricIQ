@@ -95,7 +95,8 @@ export const Header: React.FC<HeaderProps> = ({
   // Market telemetry data
   const isOnline = marketRateService.getNetworkStatus();
   const rates = marketRateService.getRates();
-  const usdPkrRate = rates.find((r) => r.id === 'rate-forex-usd-pkr')?.currentRate || 279.5;
+  const [liveFX, setLiveFX] = useState(currencyService.getLiveFX());
+  const usdPkrRate = liveFX.currentRate || 278.45;
   const cottonRate = rates.find((r) => r.id === 'rate-yarn-20-carded')?.currentRate || 2850;
   const greyRate = rates.find((r) => r.id === 'rate-grey-sheeting-63')?.currentRate || 185.5;
 
@@ -132,13 +133,19 @@ export const Header: React.FC<HeaderProps> = ({
   // Refs for click-outside
   const headerRef = useRef<HTMLDivElement>(null);
 
-  // Subscribe to theme updates
+  // Subscribe to theme & currency updates
   useEffect(() => {
-    const unsubscribe = themeService.subscribe((resolved, mode) => {
+    const unsubTheme = themeService.subscribe((resolved, mode) => {
       setResolvedTheme(resolved);
       setThemeMode(mode);
     });
-    return () => unsubscribe();
+    const unsubFX = currencyService.subscribe((fx) => {
+      setLiveFX(fx);
+    });
+    return () => {
+      unsubTheme();
+      unsubFX();
+    };
   }, []);
 
   // Listen to scroll
