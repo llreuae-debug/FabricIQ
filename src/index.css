@@ -6,26 +6,80 @@
   --font-arabic: 'Cairo', 'Plus Jakarta Sans', sans-serif;
   --font-urdu: 'Noto Nastaliq Urdu', 'Cairo', serif;
 
-  /* FabricIQ Brand Signature Palette */
-  --fiq-blue: #0052ff;
-  --fiq-cyan: #00d2ff;
-  --fiq-emerald: #10b981;
-  --fiq-navy-950: #040814;
-  --fiq-navy-900: #081026;
-  --fiq-navy-850: #0c1836;
-  --fiq-navy-800: #12224d;
+  /* Fluorescent Accent System */
+  --fiq-primary: #6EA8FF;
+  --fiq-cyan: #67E8F9;
+  --fiq-mint: #6EE7B7;
+  --fiq-lime: #BEF264;
+  --fiq-violet: #C4B5FD;
+  --fiq-pink: #F9A8D4;
+
+  /* Default Dark Mode Tokens */
+  --bg-app: #0B1220;
+  --bg-header: #111827;
+  --bg-header-scrolled: rgba(17, 24, 39, 0.88);
+  --border-header: #1F2937;
+  --text-nav: #CBD5E1;
+  --text-nav-hover: #FFFFFF;
+  --bg-nav-active: rgba(103, 232, 249, 0.10);
+  --text-nav-active: #67E8F9;
+  --border-nav-active: rgba(103, 232, 249, 0.3);
+  --card-bg: rgba(17, 24, 39, 0.85);
+  --card-border: #1F2937;
+  --text-primary: #F8FAFC;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --input-bg: #0F172A;
+  --input-border: #334155;
+  --surface-hover: rgba(255, 255, 255, 0.05);
 }
 
+/* Light Mode Tokens */
+html.light,
+html[data-theme="light"],
+[data-theme="light"] {
+  --bg-app: #F8FAFC;
+  --bg-header: #FFFFFF;
+  --bg-header-scrolled: rgba(255, 255, 255, 0.88);
+  --border-header: #E5E7EB;
+  --text-nav: #334155;
+  --text-nav-hover: #0F172A;
+  --bg-nav-active: #E0F2FE;
+  --text-nav-active: #0284C7;
+  --border-nav-active: #BAE6FD;
+  --card-bg: #FFFFFF;
+  --card-border: #E2E8F0;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --input-bg: #FFFFFF;
+  --input-border: #CBD5E1;
+  --surface-hover: rgba(0, 0, 0, 0.03);
+}
+
+/* Base Body Styles */
 body {
   font-family: var(--font-sans);
-  background-color: var(--fiq-navy-950);
+  background-color: var(--bg-app);
+  color: var(--text-primary);
+  overflow-x: hidden;
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+/* Background Gradients */
+html.dark body {
   background-image: 
     radial-gradient(at 0% 0%, rgba(0, 82, 255, 0.12) 0px, transparent 50%),
-    radial-gradient(at 100% 0%, rgba(0, 210, 255, 0.08) 0px, transparent 50%),
-    radial-gradient(at 50% 100%, rgba(16, 185, 129, 0.06) 0px, transparent 50%);
+    radial-gradient(at 100% 0%, rgba(103, 232, 249, 0.08) 0px, transparent 50%),
+    radial-gradient(at 50% 100%, rgba(110, 231, 183, 0.06) 0px, transparent 50%);
   background-attachment: fixed;
-  color: #f1f5f9;
-  overflow-x: hidden;
+}
+
+html.light body {
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(224, 242, 254, 0.6) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(240, 253, 244, 0.5) 0px, transparent 50%);
+  background-attachment: fixed;
 }
 
 /* RTL Font adjustments */
@@ -51,74 +105,79 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: rgba(4, 8, 20, 0.7);
+  background: transparent;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: linear-gradient(180deg, rgba(0, 82, 255, 0.4), rgba(0, 210, 255, 0.4));
+  background: rgba(148, 163, 184, 0.3);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: linear-gradient(180deg, rgba(0, 82, 255, 0.8), rgba(0, 210, 255, 0.8));
+  background: rgba(148, 163, 184, 0.6);
 }
 
-/* FabricIQ Gradient Text & Glow Utils */
+/* FabricIQ Gradient Text */
 .text-gradient-fiq {
-  background: linear-gradient(135deg, #38bdf8 0%, #00d2ff 40%, #10b981 100%);
+  background: linear-gradient(135deg, #38BDF8 0%, #00D2FF 40%, #10B981 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .text-gradient-royal {
-  background: linear-gradient(135deg, #60a5fa 0%, #3b82f6 50%, #00d2ff 100%);
+  background: linear-gradient(135deg, #60A5FA 0%, #3B82F6 50%, #00D2FF 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
-.border-gradient-fiq {
-  border-image: linear-gradient(to right, #0052ff, #00d2ff, #10b981) 1;
-}
-
+/* Fluorescent Accents & Glows */
 .glow-fiq-cyan {
-  box-shadow: 0 0 25px -5px rgba(0, 210, 255, 0.25);
+  box-shadow: 0 0 20px -4px rgba(103, 232, 249, 0.35);
 }
 
 .glow-fiq-blue {
-  box-shadow: 0 0 30px -5px rgba(0, 82, 255, 0.3);
+  box-shadow: 0 0 25px -4px rgba(110, 168, 255, 0.35);
 }
 
-.glow-fiq-emerald {
-  box-shadow: 0 0 25px -5px rgba(16, 185, 129, 0.25);
+.glow-fiq-mint {
+  box-shadow: 0 0 20px -4px rgba(110, 231, 183, 0.35);
 }
 
-/* Glassmorphism utils tailored for FabricIQ */
-.glass-panel {
-  background: rgba(8, 16, 38, 0.75);
+/* Glass Panels with Theme Awareness */
+html.dark .glass-panel {
+  background: rgba(17, 24, 39, 0.75);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(56, 189, 248, 0.12);
+  border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-.glass-panel-glow {
-  background: rgba(12, 24, 54, 0.85);
-  backdrop-filter: blur(20px);
-  border: 1px solid rgba(0, 210, 255, 0.3);
-  box-shadow: 0 0 30px -5px rgba(0, 210, 255, 0.15);
+html.light .glass-panel {
+  background: rgba(255, 255, 255, 0.90);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 20px -2px rgba(0, 0, 0, 0.04);
 }
 
-.glass-card {
-  background: linear-gradient(135deg, rgba(14, 27, 60, 0.75) 0%, rgba(8, 16, 38, 0.9) 100%);
+html.dark .glass-card {
+  background: linear-gradient(135deg, rgba(17, 24, 39, 0.85) 0%, rgba(11, 18, 32, 0.95) 100%);
   backdrop-filter: blur(12px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
-/* Fabric Woven Pattern Background Accent */
+html.light .glass-card {
+  background: #FFFFFF;
+  backdrop-filter: blur(12px);
+  border: 1px solid #E2E8F0;
+  box-shadow: 0 4px 15px -3px rgba(0, 0, 0, 0.05);
+}
+
+/* Woven Grid Mesh Background Accent */
 .woven-grid-bg {
   background-size: 24px 24px;
   background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.02) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.02) 1px, transparent 1px);
+    linear-gradient(to right, rgba(148, 163, 184, 0.04) 1px, transparent 1px),
+    linear-gradient(to bottom, rgba(148, 163, 184, 0.04) 1px, transparent 1px);
 }
 
 /* Logo Animation Keyframes */
@@ -127,16 +186,7 @@ body {
     transform: translateY(0px) rotate(0deg);
   }
   50% {
-    transform: translateY(-8px) rotate(1deg);
-  }
-}
-
-@keyframes logo-shimmer {
-  0% {
-    background-position: -200% 0;
-  }
-  100% {
-    background-position: 200% 0;
+    transform: translateY(-6px) rotate(0.8deg);
   }
 }
 
@@ -151,20 +201,6 @@ body {
   }
 }
 
-@keyframes weave-draw {
-  0% {
-    stroke-dashoffset: 1000;
-    opacity: 0;
-  }
-  50% {
-    opacity: 1;
-  }
-  100% {
-    stroke-dashoffset: 0;
-    opacity: 1;
-  }
-}
-
 .animate-logo-float {
   animation: logo-float 4s ease-in-out infinite;
 }
@@ -173,7 +209,7 @@ body {
   animation: logo-aura-pulse 3s ease-in-out infinite;
 }
 
-/* Pulse animation for live badge */
+/* Live Pulse Animation */
 @keyframes live-pulse {
   0%, 100% {
     opacity: 1;

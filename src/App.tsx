@@ -108,7 +108,7 @@ export function App() {
   };
 
   return (
-    <div className="min-h-screen bg-[#040814] text-slate-100 flex flex-col font-sans selection:bg-[#0052ff] selection:text-white">
+    <div className="min-h-screen bg-[var(--bg-app)] text-[var(--text-primary)] flex flex-col font-sans selection:bg-[#0052ff] selection:text-white transition-colors duration-200">
       {/* Starting Splash Screen & Logo Animation */}
       {showSplash && (
         <SplashScreen onComplete={handleSplashComplete} />
@@ -200,26 +200,26 @@ export function App() {
       </main>
 
       {/* Modern FabricIQ Footer */}
-      <footer className="border-t border-slate-900/80 bg-[#040814]/90 py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 mt-auto">
+      <footer className="border-t border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-[#0B1220]/90 backdrop-blur-md py-8 px-4 sm:px-6 lg:px-8 text-xs text-slate-500 dark:text-slate-400 mt-auto transition-colors duration-200">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-xl overflow-hidden bg-white p-0.5 shadow-md flex items-center justify-center">
+            <div className="w-8 h-8 rounded-xl overflow-hidden bg-white p-0.5 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-center">
               <img src={logoImg} alt="FabricIQ" className="w-full h-full object-cover rounded-[7px]" />
             </div>
             <div>
-              <span className="font-extrabold text-white font-['Outfit'] tracking-tight">FABRIC</span>
+              <span className="font-extrabold text-slate-900 dark:text-white font-['Outfit'] tracking-tight">FABRIC</span>
               <span className="text-gradient-fiq font-extrabold font-['Outfit']">IQ</span>
-              <span className="ml-2 text-slate-400">• Smart Textile Costing & Live Market Intelligence</span>
+              <span className="ml-2 text-slate-500 dark:text-slate-400">• Smart Textile Costing & Live Market Intelligence</span>
             </div>
           </div>
 
           <div className="flex items-center gap-4 text-[11px]">
-            <span className="flex items-center gap-1 text-emerald-400">
+            <span className="flex items-center gap-1 text-emerald-500 font-medium">
               <ShieldCheck className="w-3.5 h-3.5" />
               Verified Textile Index Feeds
             </span>
-            <span className="text-slate-600">|</span>
-            <span className="text-slate-400">ASTM D3776 & ISO Textile Engineering Compliant</span>
+            <span className="text-slate-300 dark:text-slate-700">|</span>
+            <span className="text-slate-500 dark:text-slate-400">ASTM D3776 & ISO Textile Engineering Compliant</span>
           </div>
         </div>
       </footer>

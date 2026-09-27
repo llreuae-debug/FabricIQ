@@ -1,17 +1,33 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Globe, 
   Wifi, 
   WifiOff, 
   RefreshCw, 
   ChevronDown, 
-  Check,
-  Sparkles
+  Check, 
+  Sun, 
+  Moon, 
+  Laptop, 
+  Bell, 
+  Menu, 
+  X, 
+  Search, 
+  Layers, 
+  TrendingUp, 
+  FileText, 
+  BarChart3, 
+  Calculator, 
+  User, 
+  Settings, 
+  LogOut,
+  ExternalLink
 } from 'lucide-react';
 import type { CurrencyCode, LanguageCode } from '../types';
 import { CURRENCY_MAP, currencyService } from '../services/currencyService';
 import { LANGUAGES, i18n } from '../services/i18n';
 import { marketRateService } from '../services/marketRateService';
+import { themeService, type ThemeMode, type ResolvedTheme } from '../services/themeService';
 import logoImg from '../assets/logo.png';
 
 interface HeaderProps {
@@ -26,6 +42,15 @@ interface HeaderProps {
   onShowSplash?: () => void;
 }
 
+interface NotificationItem {
+  id: string;
+  title: string;
+  desc: string;
+  time: string;
+  type: 'rate_alert' | 'quote' | 'forex';
+  unread: boolean;
+}
+
 export const Header: React.FC<HeaderProps> = ({
   currentLang,
   onLanguageChange,
@@ -37,54 +62,196 @@ export const Header: React.FC<HeaderProps> = ({
   isSyncing,
   onShowSplash,
 }) => {
+  // Theme state
+  const [themeMode, setThemeMode] = useState<ThemeMode>(themeService.getMode());
+  const [resolvedTheme, setResolvedTheme] = useState<ResolvedTheme>(themeService.getResolvedTheme());
+
+  // Dropdown states
   const [langDropdownOpen, setLangDropdownOpen] = useState(false);
   const [currDropdownOpen, setCurrDropdownOpen] = useState(false);
+  const [themeDropdownOpen, setThemeDropdownOpen] = useState(false);
+  const [notifDropdownOpen, setNotifDropdownOpen] = useState(false);
+  const [profileDropdownOpen, setProfileDropdownOpen] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  // Search in currency dropdown
+  const [currencySearch, setCurrencySearch] = useState('');
+
+  // Scroll state for sticky glassmorphism
+  const [isScrolled, setIsScrolled] = useState(false);
+
+  // Market telemetry data
   const isOnline = marketRateService.getNetworkStatus();
   const rates = marketRateService.getRates();
-
   const usdPkrRate = rates.find((r) => r.id === 'rate-forex-usd-pkr')?.currentRate || 279.5;
   const cottonRate = rates.find((r) => r.id === 'rate-yarn-20-carded')?.currentRate || 2850;
   const greyRate = rates.find((r) => r.id === 'rate-grey-sheeting-63')?.currentRate || 185.5;
 
+  // Sample Notifications
+  const [notifications, setNotifications] = useState<NotificationItem[]>([
+    {
+      id: 'n1',
+      title: 'Yarn Benchmark Alert',
+      desc: '20/1 Carded Cotton Yarn increased +1.1% on Faisalabad Exchange.',
+      time: '12m ago',
+      type: 'rate_alert',
+      unread: true,
+    },
+    {
+      id: 'n2',
+      title: 'Quotation Approved',
+      desc: 'Ref FIQ-2026-0841 approved by AeroTex Global Sourcing.',
+      time: '45m ago',
+      type: 'quote',
+      unread: true,
+    },
+    {
+      id: 'n3',
+      title: 'Forex Index Updated',
+      desc: 'USD/PKR parity calibrated to 279.50 (State Bank verified).',
+      time: '2h ago',
+      type: 'forex',
+      unread: false,
+    },
+  ]);
+
+  const unreadCount = notifications.filter((n) => n.unread).length;
+
+  // Refs for click-outside
+  const headerRef = useRef<HTMLDivElement>(null);
+
+  // Subscribe to theme updates
+  useEffect(() => {
+    const unsubscribe = themeService.subscribe((resolved, mode) => {
+      setResolvedTheme(resolved);
+      setThemeMode(mode);
+    });
+    return () => unsubscribe();
+  }, []);
+
+  // Listen to scroll
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 15) {
+        setIsScrolled(true);
+      } else {
+        setIsScrolled(false);
+      }
+    };
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Close dropdowns on outside click
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      if (headerRef.current && !headerRef.current.contains(e.target as Node)) {
+        setLangDropdownOpen(false);
+        setCurrDropdownOpen(false);
+        setThemeDropdownOpen(false);
+        setNotifDropdownOpen(false);
+        setProfileDropdownOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
+
+  const handleThemeSelect = (mode: ThemeMode) => {
+    themeService.setMode(mode);
+    setThemeDropdownOpen(false);
+  };
+
+  const markAllNotificationsRead = () => {
+    setNotifications(notifications.map((n) => ({ ...n, unread: false })));
+  };
+
+  const filteredCurrencies = Object.values(CURRENCY_MAP).filter(
+    (c) =>
+      c.code.toLowerCase().includes(currencySearch.toLowerCase()) ||
+      c.name.toLowerCase().includes(currencySearch.toLowerCase()) ||
+      c.symbol.toLowerCase().includes(currencySearch.toLowerCase())
+  );
+
+  const navLinks = [
+    { id: 'dashboard', label: 'Dashboard', icon: Layers },
+    { id: 'calculator', label: 'Cost Calculator', icon: Calculator },
+    { id: 'market_rates', label: 'Market Rates', icon: TrendingUp },
+    { id: 'saved_estimates', label: 'Estimates', icon: FileText },
+    { id: 'utilities', label: 'Reports', icon: BarChart3 },
+  ];
+
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-800/80 bg-[#040814]/90 backdrop-blur-xl transition-all shadow-xl shadow-black/30">
-      {/* Top Live Rates Ticker */}
-      <div className="bg-gradient-to-r from-[#0052ff]/20 via-[#040814] to-[#00d2ff]/15 border-b border-slate-800/60 px-3 py-1.5 text-xs text-slate-300">
+    <header
+      ref={headerRef}
+      className={`sticky top-0 z-40 transition-all duration-200 ${
+        isScrolled
+          ? resolvedTheme === 'dark'
+            ? 'bg-[#111827]/90 backdrop-blur-md border-b border-[#1F2937] shadow-xl shadow-black/30'
+            : 'bg-white/90 backdrop-blur-md border-b border-[#E5E7EB] shadow-md shadow-slate-200/50'
+          : resolvedTheme === 'dark'
+          ? 'bg-[#111827] border-b border-[#1F2937]'
+          : 'bg-white border-b border-[#E5E7EB]'
+      }`}
+    >
+      {/* Top Live Rates Telemetry Ticker */}
+      <div
+        className={`px-3 py-1.5 text-xs transition-colors border-b ${
+          resolvedTheme === 'dark'
+            ? 'bg-gradient-to-r from-[#0052ff]/15 via-[#0B1220] to-[#67E8F9]/10 border-[#1F2937] text-slate-300'
+            : 'bg-gradient-to-r from-blue-50/80 via-slate-50 to-cyan-50/80 border-slate-200 text-slate-600'
+        }`}
+      >
         <div className="max-w-7xl mx-auto flex flex-wrap items-center justify-between gap-2">
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400 font-bold text-[10px] tracking-wider uppercase border border-emerald-500/30">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-live-pulse" />
+            <span
+              className={`inline-flex items-center gap-1.5 px-2 py-0.5 rounded-full font-bold text-[10px] tracking-wider uppercase border ${
+                resolvedTheme === 'dark'
+                  ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                  : 'bg-emerald-100 text-emerald-700 border-emerald-200'
+              }`}
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-live-pulse" />
               {i18n.t('live_rates_ticker')}
             </span>
+
             <div className="hidden sm:flex items-center gap-4 text-[11px] overflow-hidden">
               <span className="flex items-center gap-1">
-                <span className="text-slate-400">Cotton Yarn 20s:</span>
-                <span className="font-semibold text-slate-100">₨ {cottonRate.toLocaleString()} / 10lbs</span>
-                <span className="text-emerald-400 font-medium">↑ +1.1%</span>
+                <span className={resolvedTheme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>Cotton Yarn 20s:</span>
+                <span className={`font-semibold ${resolvedTheme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                  ₨ {cottonRate.toLocaleString()} / 10lbs
+                </span>
+                <span className="text-emerald-500 font-bold">↑ +1.1%</span>
               </span>
-              <span className="text-slate-700">|</span>
+              <span className={resolvedTheme === 'dark' ? 'text-slate-700' : 'text-slate-300'}>|</span>
               <span className="flex items-center gap-1">
-                <span className="text-slate-400">Grey Sheeting 63":</span>
-                <span className="font-semibold text-slate-100">₨ {greyRate.toFixed(2)} / m</span>
-                <span className="text-emerald-400 font-medium">↑ +1.9%</span>
+                <span className={resolvedTheme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>Grey Sheeting 63":</span>
+                <span className={`font-semibold ${resolvedTheme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                  ₨ {greyRate.toFixed(2)} / m
+                </span>
+                <span className="text-emerald-500 font-bold">↑ +1.9%</span>
               </span>
-              <span className="text-slate-700">|</span>
+              <span className={resolvedTheme === 'dark' ? 'text-slate-700' : 'text-slate-300'}>|</span>
               <span className="flex items-center gap-1">
-                <span className="text-slate-400">1 USD =</span>
-                <span className="font-semibold text-cyan-300">₨ {usdPkrRate.toFixed(2)} PKR</span>
-                <span className="text-xs text-slate-400">({currencyService.getLastUpdatedTimestamp().split(',')[0] || 'Today'})</span>
+                <span className={resolvedTheme === 'dark' ? 'text-slate-400' : 'text-slate-500'}>1 USD =</span>
+                <span className={`font-semibold ${resolvedTheme === 'dark' ? 'text-[#67E8F9]' : 'text-blue-600'}`}>
+                  ₨ {usdPkrRate.toFixed(2)} PKR
+                </span>
+                <span className={`text-xs ${resolvedTheme === 'dark' ? 'text-slate-500' : 'text-slate-400'}`}>
+                  ({currencyService.getLastUpdatedTimestamp().split(',')[0] || 'Today'})
+                </span>
               </span>
             </div>
           </div>
 
           <div className="flex items-center gap-2.5 text-[11px]">
             {isOnline ? (
-              <span className="flex items-center gap-1 text-emerald-400 font-medium">
+              <span className="flex items-center gap-1 text-emerald-500 font-medium">
                 <Wifi className="w-3 h-3" />
                 <span className="hidden md:inline">{i18n.t('online_status')}</span>
               </span>
             ) : (
-              <span className="flex items-center gap-1 text-amber-400 font-medium">
+              <span className="flex items-center gap-1 text-amber-500 font-medium">
                 <WifiOff className="w-3 h-3" />
                 <span className="hidden md:inline">{i18n.t('offline_status')}</span>
               </span>
@@ -93,152 +260,123 @@ export const Header: React.FC<HeaderProps> = ({
             <button
               onClick={onSync}
               disabled={isSyncing}
-              className="flex items-center gap-1 px-2.5 py-0.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-700/60 text-slate-200 text-[11px] font-medium transition-colors disabled:opacity-50"
+              className={`flex items-center gap-1 px-2 py-0.5 rounded-lg border text-[11px] font-medium transition-colors disabled:opacity-50 cursor-pointer ${
+                resolvedTheme === 'dark'
+                  ? 'bg-slate-900 hover:bg-slate-800 border-slate-700/60 text-slate-200'
+                  : 'bg-white hover:bg-slate-100 border-slate-300 text-slate-700'
+              }`}
               title="Sync latest live market rates"
             >
-              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-cyan-400' : 'text-slate-400'}`} />
+              <RefreshCw className={`w-3 h-3 ${isSyncing ? 'animate-spin text-[#67E8F9]' : ''}`} />
               <span className="hidden sm:inline">Sync</span>
             </button>
           </div>
         </div>
       </div>
 
-      {/* Main Global Navigation Bar */}
+      {/* Main Responsive Navigation Bar */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 gap-4">
-          {/* Logo & Brand Identity */}
+        <div className={`flex items-center justify-between transition-all duration-200 ${isScrolled ? 'h-14' : 'h-16'} gap-3`}>
+          
+          {/* LEFT: FabricIQ Logo & Wordmark */}
           <div 
             onClick={() => onTabChange('dashboard')} 
-            className="flex items-center gap-3 cursor-pointer group select-none"
+            className="flex items-center gap-2.5 cursor-pointer group select-none shrink-0"
           >
-            {/* Glowing Logo Icon */}
+            {/* Logo Icon with Hover Glow */}
             <div className="relative">
-              <div className="absolute -inset-1 rounded-xl bg-gradient-to-tr from-[#0052ff] via-[#00d2ff] to-[#10b981] opacity-60 blur-sm group-hover:opacity-100 transition-opacity" />
-              <div className="relative w-10 h-10 rounded-xl overflow-hidden bg-white p-0.5 shadow-md flex items-center justify-center transform group-hover:scale-105 transition-transform">
+              <div className="absolute -inset-1 rounded-xl bg-gradient-to-tr from-[#6EA8FF] via-[#67E8F9] to-[#6EE7B7] opacity-0 group-hover:opacity-75 blur-sm transition-opacity duration-300" />
+              <div className="relative w-9 h-9 sm:w-10 sm:h-10 rounded-xl overflow-hidden bg-white p-0.5 shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-center transform group-hover:scale-105 transition-transform duration-200">
                 <img
                   src={logoImg}
-                  alt="FabricIQ Logo"
+                  alt="FabricIQ"
                   className="w-full h-full object-cover rounded-[8px]"
                 />
               </div>
             </div>
 
-            <div>
-              <div className="flex items-center gap-1.5">
-                <h1 className="text-xl font-extrabold tracking-tight font-['Outfit']">
-                  <span className="text-white">FABRIC</span>
-                  <span className="text-gradient-fiq">IQ</span>
-                </h1>
-                <span className="px-1.5 py-0.5 rounded text-[9px] font-extrabold bg-gradient-to-r from-blue-600/30 to-cyan-500/30 text-cyan-300 border border-cyan-500/30">
-                  AI & LIVE
+            {/* Wordmark: Desktop Shows Full Wordmark, Mobile Shows Icon Only */}
+            <div className="hidden sm:block">
+              <div className="flex items-center gap-1">
+                <span className={`text-xl font-extrabold tracking-tight font-['Outfit'] ${
+                  resolvedTheme === 'dark' ? 'text-white' : 'text-[#0F172A]'
+                }`}>
+                  FABRIC
+                </span>
+                <span className="text-gradient-fiq text-xl font-extrabold font-['Outfit']">
+                  IQ
+                </span>
+                <span className={`ml-1 px-1.5 py-0.2 rounded text-[9px] font-extrabold border ${
+                  resolvedTheme === 'dark'
+                    ? 'bg-cyan-500/10 text-[#67E8F9] border-cyan-500/30'
+                    : 'bg-blue-50 text-blue-700 border-blue-200'
+                }`}>
+                  SaaS
                 </span>
               </div>
-              <p className="text-[10.5px] text-slate-400 font-medium hidden sm:block">
-                Smart Textile Costing • Live Market Intelligence
-              </p>
             </div>
           </div>
 
-          {/* Center Navigation Links (Desktop) */}
-          <nav className="hidden md:flex items-center gap-1 bg-slate-900/90 p-1 rounded-xl border border-slate-800/80 shadow-inner">
-            {[
-              { id: 'dashboard', label: i18n.t('nav_dashboard') },
-              { id: 'calculator', label: i18n.t('nav_calculator') },
-              { id: 'market_rates', label: i18n.t('nav_market_rates') },
-              { id: 'saved_estimates', label: i18n.t('nav_saved_estimates') },
-              { id: 'utilities', label: i18n.t('nav_utilities') },
-              { id: 'admin', label: i18n.t('nav_admin') },
-            ].map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => onTabChange(tab.id)}
-                className={`px-3.5 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
-                  activeTab === tab.id
-                    ? 'bg-gradient-to-r from-[#0052ff] to-[#00a8ff] text-white shadow-md shadow-blue-600/25'
-                    : 'text-slate-400 hover:text-slate-100 hover:bg-slate-800/60'
-                }`}
-              >
-                {tab.label}
-              </button>
-            ))}
+          {/* CENTER: Navigation Links (Desktop & Tablet) */}
+          <nav className="hidden lg:flex items-center gap-1">
+            {navLinks.map((item) => {
+              const Icon = item.icon;
+              const isActive = activeTab === item.id;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => onTabChange(item.id)}
+                  className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                    isActive
+                      ? resolvedTheme === 'dark'
+                        ? 'bg-[rgba(103,232,249,0.10)] text-[#67E8F9] border border-cyan-500/30 shadow-[0_0_15px_rgba(103,232,249,0.15)]'
+                        : 'bg-[#E0F2FE] text-[#0284C7] border border-[#BAE6FD] font-bold shadow-sm'
+                      : resolvedTheme === 'dark'
+                      ? 'text-[#CBD5E1] hover:text-white hover:bg-slate-800/60 border border-transparent'
+                      : 'text-[#334155] hover:text-slate-900 hover:bg-slate-100 border border-transparent'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? (resolvedTheme === 'dark' ? 'text-[#67E8F9]' : 'text-[#0284C7]') : 'opacity-70'}`} />
+                  <span>{item.label}</span>
+                </button>
+              );
+            })}
           </nav>
 
-          {/* Right Controls: Intro Splash, Currency Switcher & Language Switcher */}
-          <div className="flex items-center gap-2">
-            {onShowSplash && (
-              <button
-                onClick={onShowSplash}
-                className="hidden lg:flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-xs font-medium text-cyan-300 hover:text-cyan-200 transition-colors"
-                title="Replay FabricIQ starting animation"
-              >
-                <Sparkles className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-[11px]">Intro</span>
-              </button>
-            )}
-
-            {/* Currency Selector */}
-            <div className="relative">
-              <button
-                onClick={() => {
-                  setCurrDropdownOpen(!currDropdownOpen);
-                  setLangDropdownOpen(false);
-                }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
-              >
-                <span className="text-sm">{CURRENCY_MAP[currentCurrency].flag}</span>
-                <span>{currentCurrency}</span>
-                <span className="text-cyan-400">{CURRENCY_MAP[currentCurrency].symbol}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
-              </button>
-
-              {currDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-48 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95">
-                  <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Select Currency
-                  </div>
-                  {Object.values(CURRENCY_MAP).map((c) => (
-                    <button
-                      key={c.code}
-                      onClick={() => {
-                        onCurrencyChange(c.code);
-                        setCurrDropdownOpen(false);
-                      }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
-                        currentCurrency === c.code
-                          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold'
-                          : 'text-slate-300 hover:bg-slate-800'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        <span>{c.flag}</span>
-                        <span>{c.code}</span>
-                      </div>
-                      <span className="text-xs opacity-75">{c.symbol}</span>
-                    </button>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Language Selector */}
+          {/* RIGHT: Language, Currency, Theme Toggle, Notifications, Profile */}
+          <div className="flex items-center gap-1.5 sm:gap-2">
+            
+            {/* 1. Language Selector 🌐 */}
             <div className="relative">
               <button
                 onClick={() => {
                   setLangDropdownOpen(!langDropdownOpen);
                   setCurrDropdownOpen(false);
+                  setThemeDropdownOpen(false);
+                  setNotifDropdownOpen(false);
+                  setProfileDropdownOpen(false);
                 }}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-slate-900 hover:bg-slate-800 border border-slate-800 text-xs font-semibold text-slate-200 transition-colors cursor-pointer"
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                  resolvedTheme === 'dark'
+                    ? 'bg-[#0B1220] hover:bg-slate-800 border-[#1F2937] text-slate-200'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-sm'
+                }`}
+                title="Select Language"
               >
-                <Globe className="w-3.5 h-3.5 text-cyan-400" />
-                <span>{LANGUAGES[currentLang].flag}</span>
-                <span className="hidden sm:inline">{LANGUAGES[currentLang].nativeName}</span>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-400" />
+                <Globe className={`w-3.5 h-3.5 ${resolvedTheme === 'dark' ? 'text-[#67E8F9]' : 'text-blue-600'}`} />
+                <span className="text-xs">{LANGUAGES[currentLang].flag}</span>
+                <span className="hidden xl:inline text-[11px] font-medium">{LANGUAGES[currentLang].nativeName}</span>
+                <ChevronDown className="w-3 h-3 opacity-60" />
               </button>
 
               {langDropdownOpen && (
-                <div className="absolute right-0 mt-2 w-44 rounded-xl bg-slate-900 border border-slate-800 shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95">
-                  <div className="px-2 py-1 text-[10px] font-bold text-slate-400 uppercase tracking-wider">
-                    Select Language
+                <div className={`absolute right-0 mt-2 w-48 rounded-2xl border shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                  resolvedTheme === 'dark' ? 'bg-[#111827] border-[#1F2937]' : 'bg-white border-slate-200'
+                }`}>
+                  <div className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                    resolvedTheme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
+                    Platform Language
                   </div>
                   {Object.values(LANGUAGES).map((l) => (
                     <button
@@ -247,48 +385,441 @@ export const Header: React.FC<HeaderProps> = ({
                         onLanguageChange(l.code);
                         setLangDropdownOpen(false);
                       }}
-                      className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg text-xs transition-colors cursor-pointer ${
+                      className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
                         currentLang === l.code
-                          ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white font-semibold'
-                          : 'text-slate-300 hover:bg-slate-800'
+                          ? resolvedTheme === 'dark'
+                            ? 'bg-cyan-500/20 text-[#67E8F9] font-bold'
+                            : 'bg-blue-50 text-blue-700 font-bold'
+                          : resolvedTheme === 'dark'
+                          ? 'text-slate-300 hover:bg-slate-800'
+                          : 'text-slate-700 hover:bg-slate-100'
                       }`}
                     >
                       <div className="flex items-center gap-2">
                         <span>{l.flag}</span>
                         <span>{l.nativeName}</span>
                       </div>
-                      {currentLang === l.code && <Check className="w-3.5 h-3.5" />}
+                      {currentLang === l.code && <Check className="w-3.5 h-3.5 text-cyan-500" />}
                     </button>
                   ))}
                 </div>
               )}
             </div>
+
+            {/* 2. Currency Selector with Search */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setCurrDropdownOpen(!currDropdownOpen);
+                  setLangDropdownOpen(false);
+                  setThemeDropdownOpen(false);
+                  setNotifDropdownOpen(false);
+                  setProfileDropdownOpen(false);
+                }}
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl border text-xs font-semibold transition-all duration-150 cursor-pointer ${
+                  resolvedTheme === 'dark'
+                    ? 'bg-[#0B1220] hover:bg-slate-800 border-[#1F2937] text-slate-200'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-sm'
+                }`}
+                title="Select Base Currency"
+              >
+                <span className="text-xs">{CURRENCY_MAP[currentCurrency].flag}</span>
+                <span>{currentCurrency}</span>
+                <span className={`text-[11px] ${resolvedTheme === 'dark' ? 'text-[#67E8F9]' : 'text-blue-600'}`}>
+                  {CURRENCY_MAP[currentCurrency].symbol}
+                </span>
+                <ChevronDown className="w-3 h-3 opacity-60" />
+              </button>
+
+              {currDropdownOpen && (
+                <div className={`absolute right-0 mt-2 w-56 rounded-2xl border shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                  resolvedTheme === 'dark' ? 'bg-[#111827] border-[#1F2937]' : 'bg-white border-slate-200'
+                }`}>
+                  {/* Search Input */}
+                  <div className="relative mb-2">
+                    <Search className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
+                    <input
+                      type="text"
+                      placeholder="Search currency..."
+                      value={currencySearch}
+                      onChange={(e) => setCurrencySearch(e.target.value)}
+                      className={`w-full pl-8 pr-2 py-1.5 rounded-lg text-xs focus:outline-none ${
+                        resolvedTheme === 'dark'
+                          ? 'bg-[#0B1220] text-white placeholder-slate-500 border border-slate-800 focus:border-cyan-500'
+                          : 'bg-slate-50 text-slate-900 placeholder-slate-400 border border-slate-200 focus:border-blue-500'
+                      }`}
+                    />
+                  </div>
+
+                  <div className="max-h-48 overflow-y-auto space-y-0.5 scrollbar-thin">
+                    {filteredCurrencies.map((c) => (
+                      <button
+                        key={c.code}
+                        onClick={() => {
+                          onCurrencyChange(c.code);
+                          setCurrDropdownOpen(false);
+                          setCurrencySearch('');
+                        }}
+                        className={`w-full flex items-center justify-between px-2.5 py-1.5 rounded-xl text-xs transition-colors cursor-pointer ${
+                          currentCurrency === c.code
+                            ? resolvedTheme === 'dark'
+                              ? 'bg-cyan-500/20 text-[#67E8F9] font-bold'
+                              : 'bg-blue-50 text-blue-700 font-bold'
+                            : resolvedTheme === 'dark'
+                            ? 'text-slate-300 hover:bg-slate-800'
+                            : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2">
+                          <span>{c.flag}</span>
+                          <span className="font-semibold">{c.code}</span>
+                          <span className="text-[11px] opacity-70 truncate max-w-[80px]">{c.name}</span>
+                        </div>
+                        <span className="text-xs font-mono">{c.symbol}</span>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 3. Dark / Light Mode Toggle ☀️ / 🌙 / 💻 */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setThemeDropdownOpen(!themeDropdownOpen);
+                  setLangDropdownOpen(false);
+                  setCurrDropdownOpen(false);
+                  setNotifDropdownOpen(false);
+                  setProfileDropdownOpen(false);
+                }}
+                className={`p-2 rounded-xl border transition-all duration-200 cursor-pointer flex items-center justify-center ${
+                  resolvedTheme === 'dark'
+                    ? 'bg-[#0B1220] hover:bg-slate-800 border-[#1F2937] text-amber-300'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-blue-600 shadow-sm'
+                }`}
+                title={`Current Theme: ${themeMode} (${resolvedTheme})`}
+              >
+                {resolvedTheme === 'dark' ? (
+                  <Moon className="w-4 h-4 text-amber-300 transform rotate-0 transition-transform duration-200" />
+                ) : (
+                  <Sun className="w-4 h-4 text-amber-500 transform rotate-0 transition-transform duration-200" />
+                )}
+              </button>
+
+              {themeDropdownOpen && (
+                <div className={`absolute right-0 mt-2 w-44 rounded-2xl border shadow-2xl p-1.5 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                  resolvedTheme === 'dark' ? 'bg-[#111827] border-[#1F2937]' : 'bg-white border-slate-200'
+                }`}>
+                  <div className={`px-2.5 py-1 text-[10px] font-bold uppercase tracking-wider ${
+                    resolvedTheme === 'dark' ? 'text-slate-400' : 'text-slate-500'
+                  }`}>
+                    Theme Appearance
+                  </div>
+
+                  <button
+                    onClick={() => handleThemeSelect('light')}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                      themeMode === 'light'
+                        ? 'bg-amber-500/15 text-amber-600 font-bold'
+                        : resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Sun className="w-4 h-4 text-amber-500" />
+                      <span>Light Mode</span>
+                    </div>
+                    {themeMode === 'light' && <Check className="w-3.5 h-3.5" />}
+                  </button>
+
+                  <button
+                    onClick={() => handleThemeSelect('dark')}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                      themeMode === 'dark'
+                        ? 'bg-blue-500/15 text-[#67E8F9] font-bold'
+                        : resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Moon className="w-4 h-4 text-amber-300" />
+                      <span>Dark Mode</span>
+                    </div>
+                    {themeMode === 'dark' && <Check className="w-3.5 h-3.5" />}
+                  </button>
+
+                  <button
+                    onClick={() => handleThemeSelect('system')}
+                    className={`w-full flex items-center justify-between px-2.5 py-2 rounded-xl text-xs transition-colors cursor-pointer ${
+                      themeMode === 'system'
+                        ? 'bg-emerald-500/15 text-emerald-500 font-bold'
+                        : resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2">
+                      <Laptop className="w-4 h-4 text-slate-400" />
+                      <span>System Sync</span>
+                    </div>
+                    {themeMode === 'system' && <Check className="w-3.5 h-3.5" />}
+                  </button>
+                </div>
+              )}
+            </div>
+
+            {/* 4. Notifications Bell 🔔 */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setNotifDropdownOpen(!notifDropdownOpen);
+                  setLangDropdownOpen(false);
+                  setCurrDropdownOpen(false);
+                  setThemeDropdownOpen(false);
+                  setProfileDropdownOpen(false);
+                }}
+                className={`relative p-2 rounded-xl border transition-all duration-150 cursor-pointer ${
+                  resolvedTheme === 'dark'
+                    ? 'bg-[#0B1220] hover:bg-slate-800 border-[#1F2937] text-slate-300'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-700 shadow-sm'
+                }`}
+                title="Live Market Alerts & Notifications"
+              >
+                <Bell className="w-4 h-4" />
+                {unreadCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-4 h-4 rounded-full bg-gradient-to-r from-rose-500 to-pink-500 text-white text-[9px] font-extrabold flex items-center justify-center animate-pulse">
+                    {unreadCount}
+                  </span>
+                )}
+              </button>
+
+              {notifDropdownOpen && (
+                <div className={`absolute right-0 mt-2 w-80 rounded-2xl border shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                  resolvedTheme === 'dark' ? 'bg-[#111827] border-[#1F2937]' : 'bg-white border-slate-200'
+                }`}>
+                  <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-200 dark:border-slate-800">
+                    <span className={`text-xs font-bold ${resolvedTheme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                      Market Alerts & Updates
+                    </span>
+                    {unreadCount > 0 && (
+                      <button
+                        onClick={markAllNotificationsRead}
+                        className="text-[10px] font-semibold text-cyan-500 hover:underline cursor-pointer"
+                      >
+                        Mark all read
+                      </button>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    {notifications.map((n) => (
+                      <div
+                        key={n.id}
+                        className={`p-2.5 rounded-xl border transition-colors ${
+                          n.unread
+                            ? resolvedTheme === 'dark'
+                              ? 'bg-slate-900/90 border-cyan-500/30'
+                              : 'bg-blue-50/70 border-blue-200'
+                            : resolvedTheme === 'dark'
+                            ? 'bg-slate-900/40 border-slate-800/80'
+                            : 'bg-slate-50/60 border-slate-100'
+                        }`}
+                      >
+                        <div className="flex items-center justify-between mb-1">
+                          <span className={`text-xs font-bold ${resolvedTheme === 'dark' ? 'text-slate-100' : 'text-slate-900'}`}>
+                            {n.title}
+                          </span>
+                          <span className="text-[10px] text-slate-400 font-mono">{n.time}</span>
+                        </div>
+                        <p className={`text-[11px] leading-relaxed ${resolvedTheme === 'dark' ? 'text-slate-300' : 'text-slate-600'}`}>
+                          {n.desc}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 5. User Profile Menu */}
+            <div className="relative">
+              <button
+                onClick={() => {
+                  setProfileDropdownOpen(!profileDropdownOpen);
+                  setLangDropdownOpen(false);
+                  setCurrDropdownOpen(false);
+                  setThemeDropdownOpen(false);
+                  setNotifDropdownOpen(false);
+                }}
+                className={`flex items-center gap-2 p-1 pl-1.5 pr-2.5 rounded-xl border transition-all duration-150 cursor-pointer ${
+                  resolvedTheme === 'dark'
+                    ? 'bg-[#0B1220] hover:bg-slate-800 border-[#1F2937] text-slate-200'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800 shadow-sm'
+                }`}
+              >
+                <div className="w-7 h-7 rounded-lg bg-gradient-to-tr from-[#0052ff] to-[#67E8F9] flex items-center justify-center text-white font-bold text-xs shadow-inner">
+                  DT
+                </div>
+                <div className="hidden xl:block text-left">
+                  <div className="text-xs font-bold leading-tight truncate max-w-[90px]">Dilnawaz Tex</div>
+                  <div className="text-[10px] text-emerald-500 font-semibold leading-none">Enterprise</div>
+                </div>
+                <ChevronDown className="w-3 h-3 opacity-60 hidden sm:block" />
+              </button>
+
+              {profileDropdownOpen && (
+                <div className={`absolute right-0 mt-2 w-64 rounded-2xl border shadow-2xl p-2 z-50 animate-in fade-in zoom-in-95 duration-150 ${
+                  resolvedTheme === 'dark' ? 'bg-[#111827] border-[#1F2937]' : 'bg-white border-slate-200'
+                }`}>
+                  <div className="p-2.5 border-b border-slate-200 dark:border-slate-800 mb-1">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-[#0052ff] to-[#67E8F9] flex items-center justify-center text-white font-extrabold text-sm">
+                        DT
+                      </div>
+                      <div>
+                        <div className={`text-xs font-bold ${resolvedTheme === 'dark' ? 'text-white' : 'text-slate-900'}`}>
+                          Dilnawaz Textile Group
+                        </div>
+                        <div className="text-[11px] text-slate-400">admin@dilnawaztex.com</div>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="space-y-0.5 text-xs">
+                    <button
+                      onClick={() => {
+                        onTabChange('admin');
+                        setProfileDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                        resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <User className="w-3.5 h-3.5 text-cyan-500" />
+                      <span>Organization & Team</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        onTabChange('settings');
+                        setProfileDropdownOpen(false);
+                      }}
+                      className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                        resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                      }`}
+                    >
+                      <Settings className="w-3.5 h-3.5 text-indigo-500" />
+                      <span>Costing Engine Preferences</span>
+                    </button>
+
+                    {onShowSplash && (
+                      <button
+                        onClick={() => {
+                          onShowSplash();
+                          setProfileDropdownOpen(false);
+                        }}
+                        className={`w-full flex items-center gap-2 px-3 py-2 rounded-xl transition-colors cursor-pointer ${
+                          resolvedTheme === 'dark' ? 'text-slate-300 hover:bg-slate-800' : 'text-slate-700 hover:bg-slate-100'
+                        }`}
+                      >
+                        <ExternalLink className="w-3.5 h-3.5 text-emerald-500" />
+                        <span>Replay Brand Intro</span>
+                      </button>
+                    )}
+
+                    <div className="pt-1 mt-1 border-t border-slate-200 dark:border-slate-800">
+                      <button
+                        onClick={() => setProfileDropdownOpen(false)}
+                        className="w-full flex items-center gap-2 px-3 py-2 rounded-xl text-rose-500 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                      >
+                        <LogOut className="w-3.5 h-3.5" />
+                        <span>Sign Out</span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* 6. Mobile Hamburger Toggle */}
+            <div className="lg:hidden">
+              <button
+                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                className={`p-2 rounded-xl border transition-colors cursor-pointer ${
+                  resolvedTheme === 'dark'
+                    ? 'bg-[#0B1220] hover:bg-slate-800 border-[#1F2937] text-slate-200'
+                    : 'bg-white hover:bg-slate-50 border-slate-200 text-slate-800 shadow-sm'
+                }`}
+                title="Toggle Mobile Menu"
+              >
+                {mobileMenuOpen ? <X className="w-4 h-4" /> : <Menu className="w-4 h-4" />}
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Mobile Sub-Navigation Bar */}
-        <div className="flex md:hidden overflow-x-auto py-2 gap-1 border-t border-slate-900 scrollbar-none">
-          {[
-            { id: 'dashboard', label: i18n.t('nav_dashboard') },
-            { id: 'calculator', label: i18n.t('nav_calculator') },
-            { id: 'market_rates', label: i18n.t('nav_market_rates') },
-            { id: 'saved_estimates', label: i18n.t('nav_saved_estimates') },
-            { id: 'utilities', label: i18n.t('nav_utilities') },
-            { id: 'admin', label: i18n.t('nav_admin') },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => onTabChange(tab.id)}
-              className={`px-3 py-1 rounded-lg text-xs font-semibold whitespace-nowrap transition-all ${
-                activeTab === tab.id
-                  ? 'bg-gradient-to-r from-blue-600 to-cyan-600 text-white'
-                  : 'text-slate-400 bg-slate-900/60'
-              }`}
-            >
-              {tab.label}
-            </button>
-          ))}
-        </div>
+        {/* Clean Full-Width Mobile Navigation Panel */}
+        {mobileMenuOpen && (
+          <div className={`lg:hidden py-4 border-t transition-all animate-in slide-in-from-top-2 duration-200 space-y-4 ${
+            resolvedTheme === 'dark' ? 'border-[#1F2937] bg-[#111827]' : 'border-slate-200 bg-white'
+          }`}>
+            <div className="grid grid-cols-1 gap-1">
+              {navLinks.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => {
+                      onTabChange(item.id);
+                      setMobileMenuOpen(false);
+                    }}
+                    className={`flex items-center gap-3 px-4 py-2.5 rounded-xl text-xs font-semibold transition-colors cursor-pointer ${
+                      isActive
+                        ? resolvedTheme === 'dark'
+                          ? 'bg-cyan-500/15 text-[#67E8F9] font-bold border border-cyan-500/30'
+                          : 'bg-[#E0F2FE] text-[#0284C7] font-bold border border-[#BAE6FD]'
+                        : resolvedTheme === 'dark'
+                        ? 'text-slate-300 hover:bg-slate-800/80'
+                        : 'text-slate-700 hover:bg-slate-100'
+                    }`}
+                  >
+                    <Icon className="w-4 h-4" />
+                    <span>{item.label}</span>
+                  </button>
+                );
+              })}
+            </div>
+
+            {/* Quick Mobile Settings Row */}
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-2 text-xs">
+              <span className="text-slate-400">Current Theme: <strong className="capitalize text-slate-200 dark:text-white">{themeMode}</strong></span>
+              <div className="flex items-center gap-1.5">
+                <button
+                  onClick={() => handleThemeSelect('light')}
+                  className={`p-1.5 rounded-lg border text-xs cursor-pointer ${
+                    themeMode === 'light' ? 'bg-amber-500 text-white' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  <Sun className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleThemeSelect('dark')}
+                  className={`p-1.5 rounded-lg border text-xs cursor-pointer ${
+                    themeMode === 'dark' ? 'bg-blue-600 text-white' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  <Moon className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  onClick={() => handleThemeSelect('system')}
+                  className={`p-1.5 rounded-lg border text-xs cursor-pointer ${
+                    themeMode === 'system' ? 'bg-emerald-600 text-white' : 'bg-slate-800 text-slate-400'
+                  }`}
+                >
+                  <Laptop className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </header>
   );
