@@ -16,14 +16,15 @@ import {
   Layers, 
   TrendingUp, 
   FileText, 
-  BarChart3, 
   Calculator, 
   User, 
   Settings, 
   LogOut,
   ExternalLink,
   Gift,
-  BookOpen
+  BookOpen,
+  Database,
+  Package
 } from 'lucide-react';
 import type { CurrencyCode, LanguageCode, User as UserType } from '../types';
 import { CURRENCY_MAP, currencyService } from '../services/currencyService';
@@ -196,10 +197,11 @@ export const Header: React.FC<HeaderProps> = ({
   const navLinks = [
     { id: 'dashboard', label: 'Dashboard', icon: Layers },
     { id: 'calculator', label: 'Cost Calculator', icon: Calculator },
+    { id: 'boq_engine', label: 'BOQ Master', icon: Package },
+    { id: 'reference_library', label: 'Reference Library', icon: Database },
     { id: 'market_rates', label: 'Market Rates', icon: TrendingUp },
     { id: 'saved_estimates', label: 'Estimates', icon: FileText },
-    { id: 'knowledge', label: 'Guides & Articles', icon: BookOpen },
-    { id: 'utilities', label: 'Reports', icon: BarChart3 },
+    { id: 'knowledge', label: 'Guides', icon: BookOpen },
   ];
 
   return (

@@ -11,6 +11,8 @@ import { Calculator } from './components/Calculator';
 import { MarketRates } from './components/MarketRates';
 import { SavedEstimates } from './components/SavedEstimates';
 import { TextileTools } from './components/TextileTools';
+import { TextileReferenceLibrary } from './components/TextileReferenceLibrary';
+import { BOQCalculator } from './components/BOQCalculator';
 import { AdminPanel } from './components/AdminPanel';
 import { Settings } from './components/Settings';
 import { AutoDetectModal } from './components/AutoDetectModal';
@@ -52,6 +54,7 @@ export function App() {
   // Preload state for calculator navigation
   const [calculatorPresetId, setCalculatorPresetId] = useState<string | undefined>();
   const [toolsActiveId, setToolsActiveId] = useState<string | undefined>();
+  const [boqInitialRefNo, setBoqInitialRefNo] = useState<string | undefined>();
 
   useEffect(() => {
     // Subscribe to auth state changes
@@ -258,6 +261,14 @@ export function App() {
             onNavigateToSavedEstimates={() => setActiveTab('saved_estimates')}
             onNavigateToMarketRates={() => setActiveTab('market_rates')}
             onNavigateToTools={handleNavigateToTools}
+            onNavigateToReferenceLibrary={() => {
+              setActiveTab('reference_library');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onNavigateToBOQ={() => {
+              setActiveTab('boq_engine');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
             onOpenReferral={() => setReferralModalOpen(true)}
           />
         )}
@@ -267,6 +278,28 @@ export function App() {
             currentCurrency={currentCurrency}
             initialPresetId={calculatorPresetId}
             onEstimateSaved={() => setActiveTab('saved_estimates')}
+          />
+        )}
+
+        {activeTab === 'boq_engine' && (
+          <BOQCalculator
+            currentCurrency={currentCurrency}
+            initialRefNo={boqInitialRefNo}
+            onEstimateSaved={() => setActiveTab('saved_estimates')}
+          />
+        )}
+
+        {activeTab === 'reference_library' && (
+          <TextileReferenceLibrary
+            currentCurrency={currentCurrency}
+            onSelectForBOQ={(refNo) => {
+              setBoqInitialRefNo(refNo);
+              setActiveTab('boq_engine');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            onSelectForCalculator={(refNo) => {
+              handleNavigateToCalculator(refNo);
+            }}
           />
         )}
 

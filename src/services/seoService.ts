@@ -52,6 +52,41 @@ export const DEFAULT_METADATA: Record<string, PageMetadata> = {
       { name: 'Cost Calculator', path: '/calculator' }
     ]
   },
+  boq_engine: {
+    title: 'Textile BOQ Master & Bill of Quantities Engine | FabricIQ',
+    description: 'Build manufacturing-grade textile Bills of Quantities (BOQ) with auto-filled specifications, rate override controls, and multi-tier component costing on FabricIQ.',
+    canonicalPath: '/boq-master',
+    keywords: [
+      'textile boq calculator',
+      'textile bill of quantities',
+      'percale bed set boq',
+      'lawn suit costing boq',
+      'garment boq engine'
+    ],
+    ogType: 'website',
+    breadcrumbs: [
+      { name: 'Home', path: '/' },
+      { name: 'BOQ Master', path: '/boq-master' }
+    ]
+  },
+  reference_library: {
+    title: 'Textile Reference Intelligence Library | FabricIQ',
+    description: 'Explore the complete Pakistani textile benchmark reference library covering Fibre, Yarn, Fabric, Dyeing, Printing, Finishing, Embroidery, and Percale products.',
+    canonicalPath: '/reference-library',
+    keywords: [
+      'textile reference database',
+      'pakistani yarn rates',
+      'lawn fabric specifications',
+      'percale 200 tc specs',
+      'textile dyeing rates',
+      'digital printing rate per meter'
+    ],
+    ogType: 'website',
+    breadcrumbs: [
+      { name: 'Home', path: '/' },
+      { name: 'Reference Library', path: '/reference-library' }
+    ]
+  },
   market_rates: {
     title: 'Live Textile Market Rates | FabricIQ',
     description: 'Track verified live USD/PKR exchange rates, yarn benchmark indices, and raw commodity prices with timestamped snapshot audits on FabricIQ.',

@@ -15,7 +15,9 @@ import {
   ChevronRight,
   RefreshCw,
   AlertTriangle,
-  DollarSign
+  DollarSign,
+  Database,
+  Package
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -30,6 +32,7 @@ import type { CurrencyCode, LiveFXData } from '../types';
 import { currencyService } from '../services/currencyService';
 import { marketRateService } from '../services/marketRateService';
 import { estimateService } from '../services/estimateService';
+import { referenceDatabaseService } from '../services/referenceDatabase';
 import { 
   FABRIC_PRESETS, 
   calculateFabricIQCost, 
@@ -48,6 +51,8 @@ interface DashboardProps {
   onNavigateToSavedEstimates: () => void;
   onNavigateToMarketRates: () => void;
   onNavigateToTools: (toolId?: string) => void;
+  onNavigateToReferenceLibrary?: () => void;
+  onNavigateToBOQ?: () => void;
   onOpenReferral?: () => void;
 }
 
@@ -57,12 +62,15 @@ export const Dashboard: React.FC<DashboardProps> = ({
   onNavigateToSavedEstimates,
   onNavigateToMarketRates,
   onNavigateToTools,
+  onNavigateToReferenceLibrary,
+  onNavigateToBOQ,
   onOpenReferral,
 }) => {
   const rates = marketRateService.getRates();
   const savedEstimates = estimateService.getAll().slice(0, 4);
   const currentUser = authService.getCurrentUser();
   const referralProgress = referralService.getMilestoneProgress(currentUser);
+  const refMetrics = referenceDatabaseService.getDashboardMetrics();
 
   // Live USD/PKR FX Engine State
   const [liveFX, setLiveFX] = useState<LiveFXData>(currencyService.getLiveFX());
@@ -546,6 +554,53 @@ export const Dashboard: React.FC<DashboardProps> = ({
               </div>
             );
           })}
+        </div>
+      </div>
+
+      {/* TEXTILE REFERENCE INTELLIGENCE & BOQ MASTER CARD */}
+      <div className="rounded-2xl p-5 sm:p-6 bg-gradient-to-r from-[#0B1528] via-[#10203e] to-[#0B1528] border border-cyan-500/30 shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-80 h-80 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="relative z-10 flex flex-col lg:flex-row items-start lg:items-center justify-between gap-5">
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2">
+              <span className="p-1.5 rounded-lg bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
+                <Database className="w-4 h-4" />
+              </span>
+              <span className="text-[11px] font-mono font-bold tracking-wider text-cyan-400 uppercase">
+                Reference Intelligence & BOQ Engine
+              </span>
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                {refMetrics.totalReferences} Active Benchmarks
+              </span>
+            </div>
+            <h3 className="text-lg sm:text-xl font-extrabold text-white font-['Outfit']">
+              Pakistani Textile Reference Library & Deterministic BOQ Master
+            </h3>
+            <p className="text-xs text-slate-300 leading-relaxed">
+              Standardized production specs for <strong className="text-white">Percale 200 TC (PCL-SET-001)</strong>, <strong className="text-white">3-Piece Lawn Suits (~₨ 4,170)</strong>, Yarns (YRN), Woven/Knit Fabrics, Dyeing, Printing & Embroidery with zero-hallucination deterministic propagation.
+            </p>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            {onNavigateToReferenceLibrary && (
+              <button
+                onClick={onNavigateToReferenceLibrary}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-100 text-xs font-bold cursor-pointer transition-colors shadow-sm"
+              >
+                <Database className="w-4 h-4 text-blue-400" />
+                <span>Reference Library ({refMetrics.totalReferences})</span>
+              </button>
+            )}
+            {onNavigateToBOQ && (
+              <button
+                onClick={onNavigateToBOQ}
+                className="flex items-center gap-1.5 px-4 py-2.5 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white text-xs font-bold shadow-lg shadow-cyan-500/20 cursor-pointer transition-all"
+              >
+                <Package className="w-4 h-4" />
+                <span>Launch BOQ Master →</span>
+              </button>
+            )}
+          </div>
         </div>
       </div>
 

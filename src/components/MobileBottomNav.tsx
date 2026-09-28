@@ -15,7 +15,9 @@ import {
   Globe,
   Coins,
   BookOpen,
-  Building2
+  Building2,
+  Database,
+  Package
 } from 'lucide-react';
 import type { CurrencyCode, LanguageCode, User as UserType } from '../types';
 import { LANGUAGES } from '../services/i18n';
@@ -205,6 +207,30 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({
 
             {/* Main Navigation Links */}
             <div className="grid grid-cols-2 gap-2.5">
+              <button
+                onClick={() => {
+                  onTabChange('boq_engine');
+                  setMoreSheetOpen(false);
+                }}
+                className="p-3 rounded-xl bg-gradient-to-br from-blue-900/30 to-cyan-900/20 border border-cyan-500/40 text-left space-y-1 hover:border-cyan-400 transition-colors cursor-pointer"
+              >
+                <Package className="w-4 h-4 text-cyan-400" />
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">BOQ Master</div>
+                <div className="text-[10px] text-cyan-500">Percale, lawn & custom BOQs</div>
+              </button>
+
+              <button
+                onClick={() => {
+                  onTabChange('reference_library');
+                  setMoreSheetOpen(false);
+                }}
+                className="p-3 rounded-xl bg-gradient-to-br from-blue-900/30 to-cyan-900/20 border border-blue-500/40 text-left space-y-1 hover:border-blue-400 transition-colors cursor-pointer"
+              >
+                <Database className="w-4 h-4 text-blue-400" />
+                <div className="text-xs font-bold text-slate-800 dark:text-slate-200">Reference Library</div>
+                <div className="text-[10px] text-blue-400">Yarn, fabric, dyeing catalog</div>
+              </button>
+
               <button
                 onClick={() => {
                   onTabChange('utilities');
