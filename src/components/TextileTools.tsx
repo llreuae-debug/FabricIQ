@@ -1,10 +1,9 @@
 import React, { useState } from 'react';
 import { 
-  Layers, 
   Repeat, 
   Scale, 
   Package, 
-  Sparkles
+  Wrench
 } from 'lucide-react';
 import { convertYarnCount } from '../services/calculationEngine';
 import type { YarnCountSystem } from '../types';
@@ -47,23 +46,24 @@ export const TextileTools: React.FC<TextileToolsProps> = ({ initialTool }) => {
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Top Header */}
-      <div className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+      
+      {/* 1. Header Card */}
+      <div className="card-soft-lg p-6 sm:p-8 relative overflow-hidden bg-gradient-to-br from-[var(--surface)] via-[var(--surface)] to-[var(--surface-subtle)] flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div className="space-y-1">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-indigo-600/20 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
-              <Layers className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-[12px] bg-[#6EA8FF]/15 border border-[#6EA8FF]/30 flex items-center justify-center text-[#3B82F6] dark:text-[#67E8F9]">
+              <Wrench className="w-4 h-4" />
             </div>
-            <h2 className="text-xl font-bold text-white font-['Outfit']">
-              Specialized Textile Engineering Calculators
-            </h2>
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] font-['Outfit'] tracking-tight">
+              Textile Engineering Tools
+            </h1>
           </div>
-          <p className="text-xs text-slate-400">
-            Professional yarn count conversions, physical GSM analysis, and production yarn sourcing planners
+          <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
+            High-precision yarn count conversions, theoretical GSM mechanics, and yarn bag sourcing planners.
           </p>
         </div>
 
-        <div className="flex items-center bg-slate-950/90 p-1.5 rounded-2xl border border-slate-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] text-xs overflow-x-auto scrollbar-none gap-1">
+        <div className="flex items-center bg-[var(--surface-subtle)] p-1 rounded-[16px] border border-[var(--border-subtle)] text-xs gap-1">
           {[
             { id: 'converter', label: 'Yarn Converter' },
             { id: 'gsm', label: 'GSM & Weight' },
@@ -72,10 +72,10 @@ export const TextileTools: React.FC<TextileToolsProps> = ({ initialTool }) => {
             <button
               key={tab.id}
               onClick={() => setActiveSubTool(tab.id)}
-              className={`px-3.5 py-1.5 rounded-xl font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
+              className={`btn-tactile px-3.5 py-1.5 rounded-[12px] font-bold whitespace-nowrap cursor-pointer border ${
                 activeSubTool === tab.id
-                  ? 'bg-gradient-to-b from-indigo-500 via-indigo-600 to-indigo-700 text-white shadow-[0_4px_12px_rgba(79,70,229,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-indigo-400/50 -translate-y-0.5 scale-[1.02]'
-                  : 'text-slate-400 hover:text-white hover:bg-slate-900/60'
+                  ? 'bg-[var(--surface)] text-[#3B82F6] dark:text-[#67E8F9] border-[var(--border-subtle)] shadow-[var(--shadow-soft-sm)]'
+                  : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] border-transparent'
               }`}
             >
               {tab.label}
@@ -87,79 +87,56 @@ export const TextileTools: React.FC<TextileToolsProps> = ({ initialTool }) => {
       {/* Tool 1: Yarn Count Converter */}
       {activeSubTool === 'converter' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in">
-          <div className="lg:col-span-5 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Repeat className="w-4 h-4 text-indigo-400" />
+          <div className="lg:col-span-5 card-soft p-6 space-y-4">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <Repeat className="w-4 h-4 text-[#6EA8FF]" />
               <span>Input Yarn Count</span>
             </h3>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
                 Count Number / Value
               </label>
               <input
                 type="number"
+                step="any"
                 value={yarnVal}
-                onChange={(e) => setYarnVal(Number(e.target.value))}
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-base font-bold text-white focus:outline-none focus:border-indigo-500 font-mono"
+                onChange={(e) => setYarnVal(parseFloat(e.target.value) || 0)}
+                className="input-soft w-full px-3.5 py-2.5 text-sm font-tabular font-bold"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Input System
+              <label className="block text-xs font-semibold text-[var(--text-secondary)] mb-1.5">
+                Input Count System
               </label>
               <select
                 value={fromUnit}
-                onChange={(e) => setFromUnit(e.target.value as any)}
-                className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-xs font-medium text-slate-100 focus:outline-none focus:border-indigo-500"
+                onChange={(e) => setFromUnit(e.target.value as YarnCountSystem)}
+                className="input-soft w-full px-3.5 py-2.5 text-xs font-semibold cursor-pointer"
               >
-                <option value="Ne">English Cotton Count (Ne) - Indirect</option>
-                <option value="Nm">Metric Count (Nm) - Indirect</option>
-                <option value="Denier">Denier (D / Td) - Direct (Filament)</option>
-                <option value="Tex">Tex (g/1000m) - Direct Metric</option>
-                <option value="Dtex">Decitex (Dtex) - Direct</option>
+                <option value="Ne">Ne (English Cotton Count)</option>
+                <option value="Nm">Nm (Metric Count)</option>
+                <option value="Denier">Denier (Filament / Poly)</option>
+                <option value="Tex">Tex (Direct Metric System)</option>
+                <option value="Dtex">Decitex (Dtex)</option>
               </select>
-            </div>
-
-            <div className="p-3.5 rounded-xl bg-slate-950/60 border border-slate-800/80 text-[11px] text-slate-400 space-y-1">
-              <p>• <strong>Indirect System (Ne, Nm):</strong> Higher number = Finer yarn.</p>
-              <p>• <strong>Direct System (Denier, Tex):</strong> Higher number = Heavier/coarser yarn.</p>
             </div>
           </div>
 
-          <div className="lg:col-span-7 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-4">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Sparkles className="w-4 h-4 text-emerald-400" />
-              <span>Equivalent Yarn Counts Across Global Systems</span>
+          <div className="lg:col-span-7 card-soft-lg p-6 space-y-4">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] font-['Outfit']">
+              Equivalent Count Conversions
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
-              {[
-                { unit: 'Ne', title: 'English Cotton Count', desc: '840 yds / lb' },
-                { unit: 'Nm', title: 'Metric Count', desc: '1000m / kg' },
-                { unit: 'Denier', title: 'Denier (D)', desc: 'g / 9,000m' },
-                { unit: 'Tex', title: 'Tex', desc: 'g / 1,000m' },
-                { unit: 'dTex', title: 'Decitex (dTex)', desc: 'g / 10,000m' },
-              ].map((item) => {
-                const converted = convertYarnCount(yarnVal, fromUnit, item.unit as YarnCountSystem);
-                const isCurrent = fromUnit === item.unit;
-
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5 text-xs">
+              {(['Ne', 'Nm', 'Denier', 'Tex', 'Dtex'] as YarnCountSystem[]).map((sys) => {
+                const converted = convertYarnCount(yarnVal, fromUnit, sys);
                 return (
-                  <div
-                    key={item.unit}
-                    className={`p-4 rounded-xl border transition-all ${
-                      isCurrent
-                        ? 'bg-indigo-950/40 border-indigo-500/40 shadow-md'
-                        : 'bg-slate-950/60 border-slate-800'
-                    }`}
-                  >
-                    <div className="flex items-center justify-between text-xs text-slate-400 mb-1">
-                      <span>{item.title}</span>
-                      <span className="text-[10px] text-slate-500">{item.desc}</span>
-                    </div>
-                    <div className="text-2xl font-extrabold text-white font-mono">
-                      {converted} <span className="text-xs font-normal text-indigo-400">{item.unit}</span>
+                  <div key={sys} className="card-soft-inset p-3.5 space-y-1">
+                    <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] font-mono">{sys} System</span>
+                    <div className="text-xl font-bold font-tabular text-[#3B82F6] dark:text-[#67E8F9]">
+                      {converted.toFixed(2)} <span className="text-xs font-normal text-[var(--text-muted)]">{sys}</span>
                     </div>
                   </div>
                 );
@@ -169,200 +146,166 @@ export const TextileTools: React.FC<TextileToolsProps> = ({ initialTool }) => {
         </div>
       )}
 
-      {/* Tool 2: GSM & Weight Calculator */}
+      {/* Tool 2: GSM & Weight Estimator */}
       {activeSubTool === 'gsm' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in">
-          <div className="lg:col-span-6 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Scale className="w-4 h-4 text-indigo-400" />
+          <div className="lg:col-span-6 card-soft p-6 space-y-4">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <Scale className="w-4 h-4 text-[#6EE7B7]" />
               <span>Fabric Construction Parameters</span>
             </h3>
 
-            <div className="grid grid-cols-2 gap-3.5">
+            <div className="grid grid-cols-2 gap-3 text-xs">
               <div>
-                <label className="block text-xs text-slate-300 mb-1">Warp Count (Ne)</label>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Warp Count (Ne)</label>
                 <input
                   type="number"
                   value={gsmWarpNe}
-                  onChange={(e) => setGsmWarpNe(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
+                  onChange={(e) => setGsmWarpNe(parseFloat(e.target.value) || 1)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
                 />
               </div>
-
               <div>
-                <label className="block text-xs text-slate-300 mb-1">Weft Count (Ne)</label>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Weft Count (Ne)</label>
                 <input
                   type="number"
                   value={gsmWeftNe}
-                  onChange={(e) => setGsmWeftNe(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
+                  onChange={(e) => setGsmWeftNe(parseFloat(e.target.value) || 1)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
                 />
               </div>
-
               <div>
-                <label className="block text-xs text-slate-300 mb-1">EPI (Ends/Inch)</label>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Warp EPI</label>
                 <input
                   type="number"
                   value={gsmEpi}
-                  onChange={(e) => setGsmEpi(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
+                  onChange={(e) => setGsmEpi(parseFloat(e.target.value) || 1)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
                 />
               </div>
-
               <div>
-                <label className="block text-xs text-slate-300 mb-1">PPI (Picks/Inch)</label>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Weft PPI</label>
                 <input
                   type="number"
                   value={gsmPpi}
-                  onChange={(e) => setGsmPpi(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
+                  onChange={(e) => setGsmPpi(parseFloat(e.target.value) || 1)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
                 />
               </div>
-
               <div>
-                <label className="block text-xs text-slate-300 mb-1">Finished Width (Inches)</label>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Fabric Width (in)</label>
                 <input
                   type="number"
                   value={gsmWidth}
-                  onChange={(e) => setGsmWidth(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
+                  onChange={(e) => setGsmWidth(parseFloat(e.target.value) || 1)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
                 />
               </div>
-
               <div>
-                <label className="block text-xs text-slate-300 mb-1">Crimp Allowance %</label>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Crimp & Contraction (%)</label>
                 <input
                   type="number"
-                  step="0.5"
+                  step="0.1"
                   value={gsmCrimp}
-                  onChange={(e) => setGsmCrimp(Number(e.target.value))}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
+                  onChange={(e) => setGsmCrimp(parseFloat(e.target.value) || 0)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
                 />
               </div>
             </div>
           </div>
 
-          <div className="lg:col-span-6 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-4 flex flex-col justify-between">
-            <div>
-              <h3 className="text-sm font-bold text-white mb-4">
-                Calculated Fabric Weight & Densities
-              </h3>
+          <div className="lg:col-span-6 card-soft-lg p-6 space-y-4">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] font-['Outfit']">
+              Calculated Fabric Weights
+            </h3>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="p-4 rounded-xl bg-slate-950/70 border border-indigo-500/30">
-                  <span className="text-xs text-slate-400 block mb-1">Theoretical Grey GSM</span>
-                  <div className="text-3xl font-black text-white font-['Outfit']">
-                    {calcGsm} <span className="text-sm text-indigo-400 font-medium">g/m²</span>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                  <span className="text-xs text-slate-400 block mb-1">Ounces Per Square Yard</span>
-                  <div className="text-3xl font-black text-slate-200 font-['Outfit']">
-                    {ozSqYd} <span className="text-sm text-slate-400 font-medium">oz/yd²</span>
-                  </div>
-                </div>
-
-                <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 sm:col-span-2">
-                  <span className="text-xs text-slate-400 block mb-1">Linear Meter Weight ({gsmWidth}" width)</span>
-                  <div className="text-2xl font-bold text-emerald-400 font-mono">
-                    {linearGramsPerMeter} <span className="text-xs text-slate-400 font-normal">grams / linear meter</span>
-                  </div>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="card-soft-inset p-4 text-center">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block">Calculated GSM</span>
+                <span className="text-2xl font-bold font-tabular text-[#10B981] dark:text-[#6EE7B7]">{calcGsm}</span>
+                <span className="text-[10px] text-[var(--text-muted)] block">g/m²</span>
+              </div>
+              <div className="card-soft-inset p-4 text-center">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block">Ounces / Sq. Yard</span>
+                <span className="text-2xl font-bold font-tabular text-[#3B82F6] dark:text-[#67E8F9]">{ozSqYd}</span>
+                <span className="text-[10px] text-[var(--text-muted)] block">oz/yd²</span>
+              </div>
+              <div className="card-soft-inset p-4 text-center">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block">Linear Weight</span>
+                <span className="text-2xl font-bold font-tabular text-[#8B5CF6] dark:text-[#C4B5FD]">{linearGramsPerMeter}</span>
+                <span className="text-[10px] text-[var(--text-muted)] block">g / meter</span>
               </div>
             </div>
-
-            <p className="text-[11px] text-slate-400 pt-3 border-t border-slate-800">
-              * Note: Finished woven fabric GSM typically increases by ~3% - 6% after scouring and dyeing shrinkage.
-            </p>
           </div>
         </div>
       )}
 
-      {/* Tool 3: Sourcing Bags Planner */}
+      {/* Tool 3: Yarn Sourcing Bags Planner */}
       {activeSubTool === 'sourcing' && (
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 animate-in fade-in">
-          <div className="lg:col-span-5 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4 shadow-xl">
-            <h3 className="text-sm font-bold text-white flex items-center gap-2">
-              <Package className="w-4 h-4 text-indigo-400" />
-              <span>Order Sizing Requirements</span>
+          <div className="lg:col-span-5 card-soft p-6 space-y-4">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] flex items-center gap-2">
+              <Package className="w-4 h-4 text-[#FDBA74]" />
+              <span>Order Sourcing Target</span>
             </h3>
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Target Fabric Order (Linear Meters)
-              </label>
-              <input
-                type="number"
-                value={planOrderMeters}
-                onChange={(e) => setPlanOrderMeters(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Fabric GSM (g/m²)
-              </label>
-              <input
-                type="number"
-                value={planGsm}
-                onChange={(e) => setPlanGsm(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
-                Wastage & Sizing Buffer %
-              </label>
-              <input
-                type="number"
-                step="0.5"
-                value={planWastage}
-                onChange={(e) => setPlanWastage(Number(e.target.value))}
-                className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-xs text-white font-mono"
-              />
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Target Order Length (m)</label>
+                <input
+                  type="number"
+                  value={planOrderMeters}
+                  onChange={(e) => setPlanOrderMeters(parseFloat(e.target.value) || 0)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
+                />
+              </div>
+              <div>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Fabric GSM</label>
+                <input
+                  type="number"
+                  value={planGsm}
+                  onChange={(e) => setPlanGsm(parseFloat(e.target.value) || 0)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
+                />
+              </div>
+              <div>
+                <label className="block text-[var(--text-secondary)] font-semibold mb-1">Total Process Waste %</label>
+                <input
+                  type="number"
+                  value={planWastage}
+                  onChange={(e) => setPlanWastage(parseFloat(e.target.value) || 0)}
+                  className="input-soft w-full px-3 py-2 font-tabular"
+                />
+              </div>
             </div>
           </div>
 
-          <div className="lg:col-span-7 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 shadow-xl space-y-4">
-            <h3 className="text-sm font-bold text-white">
-              Raw Yarn Procurement Requirement
+          <div className="lg:col-span-7 card-soft-lg p-6 space-y-4">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] font-['Outfit']">
+              Required Yarn Sourcing Quantities
             </h3>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="p-4 rounded-xl bg-slate-950/70 border border-indigo-500/30">
-                <span className="text-xs text-slate-400 block mb-1">Total Yarn Needed (Kg)</span>
-                <div className="text-3xl font-extrabold text-white font-mono">
-                  {totalKg.toLocaleString(undefined, { maximumFractionDigits: 1 })} <span className="text-xs text-indigo-400">kg</span>
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
+              <div className="card-soft-inset p-4 text-center">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block">Total Net Yarn</span>
+                <span className="text-2xl font-bold font-tabular text-[var(--text-primary)]">{totalKg.toFixed(0)}</span>
+                <span className="text-[10px] text-[var(--text-muted)] block">Kilograms</span>
               </div>
-
-              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">Total Weight in Pounds</span>
-                <div className="text-3xl font-extrabold text-slate-200 font-mono">
-                  {(totalKg * 2.20462).toLocaleString(undefined, { maximumFractionDigits: 0 })} <span className="text-xs text-slate-400">lbs</span>
-                </div>
+              <div className="card-soft-inset p-4 text-center">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block">100 lbs Bags</span>
+                <span className="text-2xl font-bold font-tabular text-[#3B82F6] dark:text-[#67E8F9]">{total100lbBags.toFixed(1)}</span>
+                <span className="text-[10px] text-[var(--text-muted)] block">Bags</span>
               </div>
-
-              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">Standard 100-lb Export Bags</span>
-                <div className="text-2xl font-bold text-emerald-400 font-mono">
-                  {Math.ceil(total100lbBags).toLocaleString()} <span className="text-xs text-slate-400">Bags</span>
-                </div>
-              </div>
-
-              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800">
-                <span className="text-xs text-slate-400 block mb-1">Standard 10-lb Local Bags</span>
-                <div className="text-2xl font-bold text-indigo-400 font-mono">
-                  {Math.ceil(total10lbBags).toLocaleString()} <span className="text-xs text-slate-400">Bags</span>
-                </div>
+              <div className="card-soft-inset p-4 text-center">
+                <span className="text-[10px] uppercase font-bold text-[var(--text-muted)] block">10 lbs Bags</span>
+                <span className="text-2xl font-bold font-tabular text-[#10B981] dark:text-[#6EE7B7]">{total10lbBags.toFixed(0)}</span>
+                <span className="text-[10px] text-[var(--text-muted)] block">10-lb Packages</span>
               </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };

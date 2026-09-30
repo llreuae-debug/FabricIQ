@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Calculator,
   Layers,
   Plus,
   Trash2,
@@ -9,9 +8,11 @@ import {
   Sliders,
   Copy,
   RefreshCw,
-  X,
   Package,
   Check,
+  ChevronDown,
+  ChevronUp,
+  Search
 } from 'lucide-react';
 import type {
   BOQEstimate,
@@ -32,7 +33,7 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
   initialRefNo,
   onEstimateSaved,
 }) => {
-  // Current active BOQ
+  // Active BOQ state
   const [activeBOQ, setActiveBOQ] = useState<BOQEstimate>(() =>
     boqEngineService.generatePercaleBedSetBOQ(100)
   );
@@ -43,6 +44,13 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
   const [taxPct, setTaxPct] = useState<number>(0.0);
   const [isSaved, setIsSaved] = useState<boolean>(false);
   const [saveMessage, setSaveMessage] = useState<string>('');
+
+  // Mobile expanded line cards state
+  const [expandedMobileLines, setExpandedMobileLines] = useState<Record<number, boolean>>({});
+
+  const toggleMobileLine = (idx: number) => {
+    setExpandedMobileLines((prev) => ({ ...prev, [idx]: !prev[idx] }));
+  };
 
   // Row selection for Ref No autocomplete modal
   const [editingLineIndex, setEditingLineIndex] = useState<number | null>(null);
@@ -134,7 +142,6 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
   const handleLineChange = (index: number, field: keyof BOQLineItem, value: any) => {
     const lines = [...activeBOQ.lines];
     lines[index] = { ...lines[index], [field]: value };
-    // Recalculate line
     lines[index] = boqEngineService.calculateLineItem(lines[index]);
     updateBOQState(lines);
   };
@@ -196,15 +203,6 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
     setOverrideLineIndex(null);
     setOverrideRateVal('');
     setOverrideReasonVal('');
-  };
-
-  const handleClearLineOverride = (index: number) => {
-    const lines = [...activeBOQ.lines];
-    delete lines[index].rateOverride;
-    delete lines[index].overrideUser;
-    delete lines[index].overrideReason;
-    lines[index] = boqEngineService.calculateLineItem(lines[index]);
-    updateBOQState(lines);
   };
 
   // Propagate Live Rates
@@ -300,50 +298,47 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
 
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* BOQ Header & Preset Selector */}
-      <div className="bg-gradient-to-r from-[#0d1527] via-[#111e38] to-[#0d1527] border border-cyan-500/20 rounded-2xl p-6 shadow-xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+      
+      {/* 1. BOQ Header Card */}
+      <div className="card-soft-lg p-6 sm:p-8 relative overflow-hidden bg-gradient-to-br from-[var(--surface)] via-[var(--surface)] to-[var(--surface-subtle)]">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5">
           <div className="space-y-1.5">
             <div className="flex items-center gap-2">
-              <span className="p-2 rounded-xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/30">
-                <Calculator className="w-5 h-5" />
+              <span className="p-2 rounded-[14px] bg-[#6EE7B7]/15 text-[#059669] dark:text-[#6EE7B7] border border-[#6EE7B7]/20">
+                <Package className="w-5 h-5" />
               </span>
-              <span className="text-xs font-mono font-bold tracking-widest text-cyan-400 uppercase">
-                Deterministic Multi-Line Costing Engine
+              <span className="text-xs font-mono font-bold tracking-widest text-[#059669] dark:text-[#6EE7B7] uppercase">
+                BOQ Costing Engine
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-extrabold text-white font-['Outfit'] tracking-tight">
+            <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] font-['Outfit'] tracking-tight">
               Bill of Quantities (BOQ) Master
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 max-w-2xl leading-relaxed">
-              Auto-fills specifications, unit prices, waste factors, and confidence from the <span className="text-cyan-300 font-semibold">Pakistani Textile Reference Library</span>.
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)] max-w-2xl leading-relaxed">
+              Multi-line textile manufacturing costing with automatic specification lookups, waste factors, and verified price benchmarks.
             </p>
           </div>
 
-          {/* Action Buttons */}
           <div className="flex flex-wrap items-center gap-2.5">
             <button
               onClick={handlePropagateRates}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium cursor-pointer transition-colors"
+              className="btn-tactile btn-soft-secondary px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
               title="Sync with latest reference benchmark rates"
             >
-              <RefreshCw className="w-3.5 h-3.5 text-cyan-400" />
+              <RefreshCw className="w-3.5 h-3.5 text-[#6EA8FF]" />
               <span>Propagate Rates</span>
             </button>
             <button
               onClick={handleExportBOQCsv}
-              className="flex items-center gap-1.5 px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-200 text-xs font-medium cursor-pointer transition-colors"
+              className="btn-tactile btn-soft-secondary px-3.5 py-2 text-xs font-semibold flex items-center gap-1.5 cursor-pointer"
             >
-              <Download className="w-3.5 h-3.5 text-emerald-400" />
+              <Download className="w-3.5 h-3.5 text-[#6EE7B7]" />
               <span>Export CSV</span>
             </button>
             <button
               onClick={handleSaveBOQ}
-              className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-xs font-bold shadow-lg transition-all cursor-pointer ${
-                isSaved
-                  ? 'bg-emerald-600 text-white shadow-emerald-500/20'
-                  : 'bg-gradient-to-r from-blue-600 to-cyan-500 hover:from-blue-500 hover:to-cyan-400 text-white shadow-cyan-500/20'
+              className={`btn-tactile px-4 py-2 text-xs font-bold flex items-center gap-1.5 shadow-md cursor-pointer ${
+                isSaved ? 'btn-soft-mint' : 'btn-soft-primary'
               }`}
             >
               <Save className="w-4 h-4" />
@@ -352,38 +347,38 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
           </div>
         </div>
 
-        {/* Template Buttons */}
-        <div className="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t border-slate-800/80">
-          <span className="text-xs text-slate-400 font-mono uppercase mr-1 flex items-center gap-1">
-            <Layers className="w-3.5 h-3.5 text-cyan-400" />
-            Standard Templates:
+        {/* Template Selector Bar */}
+        <div className="flex flex-wrap items-center gap-2 mt-5 pt-4 border-t border-[var(--border-subtle)]">
+          <span className="text-xs text-[var(--text-muted)] font-mono uppercase mr-1 flex items-center gap-1">
+            <Layers className="w-3.5 h-3.5 text-[#6EA8FF]" />
+            Templates:
           </span>
           <button
             onClick={() => handleLoadTemplate('PERCALE')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
+            className={`btn-tactile px-3 py-1.5 rounded-[12px] text-xs font-semibold cursor-pointer border ${
               activeBOQ.productType === 'PERCALE_BED_SET'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                ? 'bg-[#6EA8FF]/20 text-[#3B82F6] dark:text-[#67E8F9] border-[#6EA8FF]/40 font-bold shadow-sm'
+                : 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[#6EA8FF]/30'
             }`}
           >
             🛏️ Percale 200 TC Bed Set (PCL-SET-001)
           </button>
           <button
             onClick={() => handleLoadTemplate('LAWN_SUIT')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
+            className={`btn-tactile px-3 py-1.5 rounded-[12px] text-xs font-semibold cursor-pointer border ${
               activeBOQ.productType === 'LAWN_SUIT_3PC'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                ? 'bg-[#6EA8FF]/20 text-[#3B82F6] dark:text-[#67E8F9] border-[#6EA8FF]/40 font-bold shadow-sm'
+                : 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[#6EA8FF]/30'
             }`}
           >
-            👗 3-Piece Digital Lawn Suit (~₨ 4,170 Benchmark)
+            👗 3-Piece Digital Lawn Suit (~₨ 4,170)
           </button>
           <button
             onClick={() => handleLoadTemplate('BLANK')}
-            className={`px-3 py-1.5 rounded-xl text-xs font-semibold cursor-pointer transition-all ${
+            className={`btn-tactile px-3 py-1.5 rounded-[12px] text-xs font-semibold cursor-pointer border ${
               activeBOQ.productType === 'CUSTOM_PROJECT'
-                ? 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 shadow-sm'
-                : 'bg-slate-900/80 text-slate-300 hover:bg-slate-800 border border-slate-800'
+                ? 'bg-[#6EA8FF]/20 text-[#3B82F6] dark:text-[#67E8F9] border-[#6EA8FF]/40 font-bold shadow-sm'
+                : 'bg-[var(--surface)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[#6EA8FF]/30'
             }`}
           >
             ➕ Blank Custom BOQ
@@ -391,17 +386,17 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
         </div>
 
         {saveMessage && (
-          <div className="mt-3 p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center gap-2">
+          <div className="mt-3 p-2.5 rounded-[14px] bg-emerald-500/15 border border-emerald-500/30 text-emerald-600 dark:text-emerald-400 text-xs font-bold flex items-center gap-2">
             <Check className="w-4 h-4" />
             {saveMessage}
           </div>
         )}
       </div>
 
-      {/* Order Level Parameters Bar */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 bg-slate-900/90 border border-slate-800 p-4 rounded-2xl shadow-sm text-xs">
+      {/* 2. Order Parameters Bar */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 card-soft p-4 text-xs">
         <div>
-          <label className="text-slate-400 block mb-1 font-medium">Order Quantity</label>
+          <label className="text-[var(--text-secondary)] block mb-1 font-semibold">Order Quantity</label>
           <div className="flex items-center gap-2">
             <input
               type="number"
@@ -412,14 +407,14 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
                 setOrderQuantity(qty);
                 updateBOQState(activeBOQ.lines, qty);
               }}
-              className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold focus:outline-none focus:border-cyan-500"
+              className="input-soft w-full px-3 py-2 font-tabular font-bold text-xs"
             />
-            <span className="text-slate-400 font-mono">{activeBOQ.orderUnit}</span>
+            <span className="text-[var(--text-muted)] font-mono">{activeBOQ.orderUnit}</span>
           </div>
         </div>
 
         <div>
-          <label className="text-slate-400 block mb-1 font-medium">Factory Overhead %</label>
+          <label className="text-[var(--text-secondary)] block mb-1 font-semibold">Overhead %</label>
           <input
             type="number"
             step="0.5"
@@ -429,12 +424,12 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
               setOverheadPct(val);
               updateBOQState(activeBOQ.lines, orderQuantity, val);
             }}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold focus:outline-none focus:border-cyan-500"
+            className="input-soft w-full px-3 py-2 font-tabular font-bold text-xs"
           />
         </div>
 
         <div>
-          <label className="text-slate-400 block mb-1 font-medium">Target Profit Margin %</label>
+          <label className="text-[var(--text-secondary)] block mb-1 font-semibold">Profit Margin %</label>
           <input
             type="number"
             step="0.5"
@@ -444,12 +439,12 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
               setMarginPct(val);
               updateBOQState(activeBOQ.lines, orderQuantity, overheadPct, val);
             }}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold focus:outline-none focus:border-cyan-500"
+            className="input-soft w-full px-3 py-2 font-tabular font-bold text-xs"
           />
         </div>
 
         <div>
-          <label className="text-slate-400 block mb-1 font-medium">Applicable Sales Tax / VAT %</label>
+          <label className="text-[var(--text-secondary)] block mb-1 font-semibold">Sales Tax / VAT %</label>
           <input
             type="number"
             step="0.5"
@@ -459,35 +454,38 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
               setTaxPct(val);
               updateBOQState(activeBOQ.lines, orderQuantity, overheadPct, marginPct, val);
             }}
-            className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono font-bold focus:outline-none focus:border-cyan-500"
+            className="input-soft w-full px-3 py-2 font-tabular font-bold text-xs"
           />
         </div>
       </div>
 
-      {/* Main BOQ Multi-Line Grid */}
-      <div className="bg-slate-900/90 border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
-        <div className="p-4 bg-slate-950/60 border-b border-slate-800 flex items-center justify-between">
+      {/* 3. DESKTOP BOQ TABLE & MOBILE TACTILE EXPANDABLE CARDS */}
+      <div className="card-soft overflow-hidden">
+        
+        {/* Table Top Toolbar */}
+        <div className="p-4 bg-[var(--surface-subtle)] border-b border-[var(--border-subtle)] flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="font-bold text-white font-['Outfit'] text-sm sm:text-base">
+            <span className="font-bold text-[var(--text-primary)] font-['Outfit'] text-sm sm:text-base">
               {activeBOQ.title}
             </span>
-            <span className="text-xs px-2 py-0.5 rounded bg-cyan-500/10 text-cyan-400 font-mono border border-cyan-500/30">
+            <span className="pill-base pill-verified text-[10px] font-mono">
               {activeBOQ.lines.length} Line Items
             </span>
           </div>
           <button
             onClick={handleAddLine}
-            className="flex items-center gap-1 px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold cursor-pointer transition-colors shadow-sm"
+            className="btn-tactile btn-soft-primary flex items-center gap-1 px-3 py-1.5 text-xs font-bold cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             <span>Add Row</span>
           </button>
         </div>
 
-        <div className="overflow-x-auto">
+        {/* Desktop Table View (Hidden on mobile) */}
+        <div className="hidden md:block overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse min-w-[950px]">
             <thead>
-              <tr className="border-b border-slate-800 bg-slate-950/80 text-slate-400 uppercase tracking-wider font-mono text-[10px]">
+              <tr className="border-b border-[var(--border-subtle)] bg-[var(--surface-subtle)] text-[var(--text-muted)] uppercase tracking-wider font-mono text-[10px]">
                 <th className="py-3 px-3 w-10 text-center">#</th>
                 <th className="py-3 px-3 w-28">Ref No</th>
                 <th className="py-3 px-4">Item & Specification</th>
@@ -495,18 +493,17 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
                 <th className="py-3 px-2 w-16">Unit</th>
                 <th className="py-3 px-3 text-right w-28">Rate (₨)</th>
                 <th className="py-3 px-2 text-right w-16">Waste%</th>
-                <th className="py-3 px-2 text-right w-16">Yield%</th>
                 <th className="py-3 px-4 text-right w-32">Extended Cost</th>
                 <th className="py-3 px-3 text-center w-28">Confidence</th>
                 <th className="py-3 px-3 text-right w-20">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-800/60">
+            <tbody className="divide-y divide-[var(--border-subtle)]">
               {activeBOQ.lines.map((line, idx) => {
                 const isOverridden = line.rateOverride !== undefined && line.rateOverride > 0;
                 return (
-                  <tr key={line.lineNo} className="hover:bg-slate-800/40 transition-colors">
-                    <td className="py-3 px-3 text-center font-mono text-slate-500">
+                  <tr key={line.lineNo} className="hover:bg-[var(--surface-subtle)]/70 transition-colors">
+                    <td className="py-3 px-3 text-center font-mono text-[var(--text-muted)]">
                       {line.lineNo}
                     </td>
 
@@ -516,10 +513,10 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
                           setEditingLineIndex(idx);
                           setShowRefSearchModal(true);
                         }}
-                        className="flex items-center gap-1 font-mono font-bold text-cyan-400 hover:underline px-2 py-1 rounded bg-cyan-500/10 border border-cyan-500/30 cursor-pointer"
-                        title="Click to change reference"
+                        className="btn-tactile font-mono font-bold text-[#3B82F6] dark:text-[#67E8F9] px-2 py-1 rounded-[8px] bg-[#6EA8FF]/15 border border-[#6EA8FF]/30 cursor-pointer"
+                        title="Click to search reference"
                       >
-                        <span>{line.refNo}</span>
+                        {line.refNo}
                       </button>
                     </td>
 
@@ -528,13 +525,13 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
                         type="text"
                         value={line.itemName}
                         onChange={(e) => handleLineChange(idx, 'itemName', e.target.value)}
-                        className="w-full font-bold text-slate-200 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-cyan-500 focus:bg-slate-950 px-1 py-0.5 rounded focus:outline-none text-xs"
+                        className="w-full font-bold text-[var(--text-primary)] bg-transparent border-b border-transparent hover:border-[var(--border-subtle)] focus:border-[#6EA8FF] px-1 py-0.5 rounded focus:outline-none text-xs"
                       />
                       <input
                         type="text"
                         value={line.specification}
                         onChange={(e) => handleLineChange(idx, 'specification', e.target.value)}
-                        className="w-full text-[11px] text-slate-400 bg-transparent border-b border-transparent hover:border-slate-700 focus:border-cyan-500 focus:bg-slate-950 px-1 py-0.5 rounded focus:outline-none"
+                        className="w-full text-[11px] text-[var(--text-muted)] bg-transparent border-b border-transparent hover:border-[var(--border-subtle)] focus:border-[#6EA8FF] px-1 py-0.5 rounded focus:outline-none"
                       />
                     </td>
 
@@ -544,17 +541,17 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
                         step="any"
                         value={line.quantity}
                         onChange={(e) => handleLineChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
-                        className="w-20 px-2 py-1 text-right bg-slate-950 border border-slate-800 rounded font-mono text-slate-100 focus:outline-none focus:border-cyan-500"
+                        className="input-soft w-20 px-2 py-1 text-right font-tabular text-xs"
                       />
                     </td>
 
-                    <td className="py-3 px-2 text-slate-400 font-mono">
+                    <td className="py-3 px-2 text-[var(--text-muted)] font-mono">
                       {line.unit}
                     </td>
 
                     <td className="py-3 px-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <span className={`font-mono font-bold ${isOverridden ? 'text-purple-400' : 'text-slate-100'}`}>
+                        <span className={`font-tabular font-bold ${isOverridden ? 'text-purple-500' : 'text-[var(--text-primary)]'}`}>
                           ₨ {line.effectiveRate.toFixed(2)}
                         </span>
                         <button
@@ -563,18 +560,14 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
                             setOverrideRateVal(line.effectiveRate.toString());
                             setOverrideReasonVal(line.overrideReason || '');
                           }}
-                          className={`p-1 rounded cursor-pointer ${
-                            isOverridden
-                              ? 'text-purple-400 hover:bg-purple-500/20'
-                              : 'text-slate-500 hover:text-slate-300 hover:bg-slate-800'
-                          }`}
-                          title={isOverridden ? `Overridden: ${line.overrideReason}` : 'Set Override Rate'}
+                          className="btn-tactile p-1 rounded-[6px] text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
+                          title="Set override rate"
                         >
                           <Sliders className="w-3 h-3" />
                         </button>
                       </div>
                       {isOverridden && (
-                        <div className="text-[9px] text-purple-400 font-mono uppercase">
+                        <div className="text-[9px] text-purple-500 font-mono uppercase">
                           Base: ₨ {line.baseRate.toFixed(2)}
                         </div>
                       )}
@@ -586,32 +579,16 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
                         step="0.5"
                         value={line.wastePct}
                         onChange={(e) => handleLineChange(idx, 'wastePct', parseFloat(e.target.value) || 0)}
-                        className="w-14 px-1.5 py-1 text-right bg-slate-950 border border-slate-800 rounded font-mono text-slate-300 text-xs focus:outline-none focus:border-cyan-500"
+                        className="input-soft w-14 px-1.5 py-1 text-right font-tabular text-xs"
                       />
                     </td>
 
-                    <td className="py-3 px-2 text-right">
-                      <input
-                        type="number"
-                        step="0.5"
-                        value={line.yieldPct}
-                        onChange={(e) => handleLineChange(idx, 'yieldPct', parseFloat(e.target.value) || 100)}
-                        className="w-14 px-1.5 py-1 text-right bg-slate-950 border border-slate-800 rounded font-mono text-slate-300 text-xs focus:outline-none focus:border-cyan-500"
-                      />
-                    </td>
-
-                    <td className="py-3 px-4 text-right font-mono font-bold text-slate-100 text-sm">
+                    <td className="py-3 px-4 text-right font-tabular font-bold text-[var(--text-primary)] text-sm">
                       ₨ {line.extendedCost.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
                     </td>
 
                     <td className="py-3 px-3 text-center">
-                      <span className={`inline-block px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        isOverridden
-                          ? 'bg-purple-500/10 text-purple-400 border border-purple-500/30'
-                          : line.confidence === 'VERIFIED MARKET'
-                          ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/30'
-                          : 'bg-slate-500/10 text-slate-400 border border-slate-500/30'
-                      }`}>
+                      <span className="pill-base pill-live text-[9px] py-0 px-1.5">
                         {isOverridden ? 'OVERRIDE' : line.confidence.split(' ')[0]}
                       </span>
                     </td>
@@ -620,14 +597,14 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleDuplicateLine(idx)}
-                          className="p-1 rounded text-slate-400 hover:text-white hover:bg-slate-800 cursor-pointer"
+                          className="btn-tactile p-1 rounded-[6px] text-[var(--text-muted)] hover:text-[var(--text-primary)] cursor-pointer"
                           title="Duplicate line"
                         >
                           <Copy className="w-3.5 h-3.5" />
                         </button>
                         <button
                           onClick={() => handleDeleteLine(idx)}
-                          className="p-1 rounded text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 cursor-pointer"
+                          className="btn-tactile p-1 rounded-[6px] text-rose-500 hover:bg-rose-500/10 cursor-pointer"
                           title="Delete line"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -640,147 +617,263 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
             </tbody>
           </table>
         </div>
+
+        {/* Mobile Experience: Tactile Expandable Cards (Shown on mobile screens) */}
+        <div className="md:hidden divide-y divide-[var(--border-subtle)]">
+          {activeBOQ.lines.map((line, idx) => {
+            const isExpanded = !!expandedMobileLines[idx];
+            return (
+              <div key={line.lineNo} className="p-4 space-y-3">
+                
+                {/* Collapsed Header */}
+                <div 
+                  onClick={() => toggleMobileLine(idx)}
+                  className="flex items-start justify-between gap-3 cursor-pointer"
+                >
+                  <div className="space-y-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="font-mono text-xs font-bold text-[#3B82F6] dark:text-[#67E8F9] px-2 py-0.5 rounded-[6px] bg-[#6EA8FF]/15 border border-[#6EA8FF]/30">
+                        {line.refNo}
+                      </span>
+                      <h4 className="text-xs font-bold text-[var(--text-primary)] truncate">
+                        {line.itemName}
+                      </h4>
+                    </div>
+                    <div className="text-[11px] text-[var(--text-secondary)] font-tabular">
+                      Qty {line.quantity} {line.unit} · ₨ {line.effectiveRate.toFixed(2)}/{line.unit}
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <span className="font-tabular font-bold text-xs text-[var(--text-primary)]">
+                      ₨ {line.extendedCost.toFixed(0)}
+                    </span>
+                    {isExpanded ? <ChevronUp className="w-4 h-4 text-[var(--text-muted)]" /> : <ChevronDown className="w-4 h-4 text-[var(--text-muted)]" />}
+                  </div>
+                </div>
+
+                {/* Expanded Details */}
+                {isExpanded && (
+                  <div className="pt-3 border-t border-[var(--border-subtle)] space-y-3 text-xs animate-in fade-in duration-150">
+                    <div>
+                      <label className="text-[var(--text-muted)] block mb-1">Specification</label>
+                      <input
+                        type="text"
+                        value={line.specification}
+                        onChange={(e) => handleLineChange(idx, 'specification', e.target.value)}
+                        className="input-soft w-full px-3 py-2 text-xs"
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2.5">
+                      <div>
+                        <label className="text-[var(--text-muted)] block mb-1">Quantity ({line.unit})</label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={line.quantity}
+                          onChange={(e) => handleLineChange(idx, 'quantity', parseFloat(e.target.value) || 0)}
+                          className="input-soft w-full px-3 py-2 text-xs font-tabular"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-[var(--text-muted)] block mb-1">Rate (₨/{line.unit})</label>
+                        <input
+                          type="number"
+                          step="any"
+                          value={line.effectiveRate}
+                          onChange={(e) => handleLineChange(idx, 'rateOverride', parseFloat(e.target.value) || 0)}
+                          className="input-soft w-full px-3 py-2 text-xs font-tabular"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between text-[11px] text-[var(--text-muted)] pt-1">
+                      <span>Waste: {line.wastePct}%</span>
+                      <span>Source: {line.source}</span>
+                      <span className="pill-base pill-live text-[9px] py-0 px-1.5">{line.confidence.split(' ')[0]}</span>
+                    </div>
+
+                    <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
+                      <button
+                        onClick={() => {
+                          setEditingLineIndex(idx);
+                          setShowRefSearchModal(true);
+                        }}
+                        className="btn-tactile btn-soft-secondary px-3 py-1.5 text-xs font-semibold cursor-pointer"
+                      >
+                        Change Ref
+                      </button>
+                      <button
+                        onClick={() => handleDuplicateLine(idx)}
+                        className="btn-tactile btn-soft-secondary p-2 cursor-pointer"
+                      >
+                        <Copy className="w-3.5 h-3.5 text-[#6EA8FF]" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteLine(idx)}
+                        className="btn-tactile p-2 rounded-[10px] text-rose-500 hover:bg-rose-500/10 cursor-pointer"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+              </div>
+            );
+          })}
+        </div>
+
       </div>
 
-      {/* BOQ Financial Summary Matrix */}
+      {/* 4. BOQ Financial Summary Hierarchy */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Cost Breakdown Category Matrix */}
-        <div className="bg-slate-900/90 border border-slate-800 p-5 rounded-2xl space-y-4 shadow-xl">
-          <h3 className="text-sm font-bold text-slate-200 uppercase tracking-wider font-mono flex items-center gap-2">
-            <Package className="w-4 h-4 text-cyan-400" />
+        
+        {/* Cost Hierarchy */}
+        <div className="card-soft p-5 space-y-3">
+          <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider font-mono flex items-center gap-2">
+            <Package className="w-4 h-4 text-[#6EA8FF]" />
             Manufacturing Cost Hierarchy
           </h3>
 
-          <div className="space-y-2.5 text-xs">
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-850">
-              <span className="text-slate-400">1. Direct Materials (Yarn, Fabric, Fibre)</span>
-              <span className="font-mono font-bold text-slate-200">
+          <div className="space-y-2 text-xs">
+            <div className="flex items-center justify-between p-3 rounded-[14px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
+              <span className="text-[var(--text-secondary)]">1. Direct Materials (Yarn, Fabric, Fibre)</span>
+              <span className="font-tabular font-bold text-[var(--text-primary)]">
                 ₨ {activeBOQ.summary.totalDirectMaterialCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-850">
-              <span className="text-slate-400">2. Processing (Dyeing, Printing, Finishing, Wash)</span>
-              <span className="font-mono font-bold text-slate-200">
+            <div className="flex items-center justify-between p-3 rounded-[14px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
+              <span className="text-[var(--text-secondary)]">2. Processing (Dyeing, Printing, Finishing, Wash)</span>
+              <span className="font-tabular font-bold text-[var(--text-primary)]">
                 ₨ {activeBOQ.summary.totalDirectProcessCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-850">
-              <span className="text-slate-400">3. Trims & Packaging (Thread, Elastic, Bags, Cartons)</span>
-              <span className="font-mono font-bold text-slate-200">
+            <div className="flex items-center justify-between p-3 rounded-[14px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
+              <span className="text-[var(--text-secondary)]">3. Trims & Packaging (Thread, Elastic, Bags)</span>
+              <span className="font-tabular font-bold text-[var(--text-primary)]">
                 ₨ {activeBOQ.summary.totalTrimsAndPackingCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
             </div>
 
-            <div className="flex items-center justify-between p-2.5 rounded-xl bg-slate-950 border border-slate-850">
-              <span className="text-slate-400">4. Labour & Inspection (CMT, Ironing, Packing)</span>
-              <span className="font-mono font-bold text-slate-200">
+            <div className="flex items-center justify-between p-3 rounded-[14px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
+              <span className="text-[var(--text-secondary)]">4. Labour & Inspection (CMT, Ironing, Packing)</span>
+              <span className="font-tabular font-bold text-[var(--text-primary)]">
                 ₨ {activeBOQ.summary.totalLabourCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
               </span>
             </div>
           </div>
         </div>
 
-        {/* Commercial Totals Card */}
-        <div className="bg-gradient-to-br from-[#0f172a] to-[#0d1527] border border-cyan-500/30 p-5 rounded-2xl space-y-4 shadow-2xl relative overflow-hidden">
-          <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-            <h3 className="text-sm font-bold text-white uppercase tracking-wider font-mono">
+        {/* Commercial Summary */}
+        <div className="card-soft-lg p-6 bg-gradient-to-br from-[var(--surface)] to-[var(--surface-subtle)] space-y-4">
+          <div className="flex items-center justify-between border-b border-[var(--border-subtle)] pb-3">
+            <h3 className="text-sm font-bold text-[var(--text-primary)] uppercase tracking-wider font-mono">
               Commercial Estimation Summary
             </h3>
-            <span className="text-xs font-mono text-cyan-400 bg-cyan-500/10 px-2 py-0.5 rounded border border-cyan-500/30">
+            <span className="pill-base pill-verified text-[10px] font-mono">
               {orderQuantity} {activeBOQ.orderUnit}
             </span>
           </div>
 
-          <div className="space-y-2 text-xs">
-            <div className="flex items-center justify-between text-slate-300">
+          <div className="space-y-2.5 text-xs">
+            <div className="flex items-center justify-between text-[var(--text-secondary)]">
               <span>Subtotal Production Cost:</span>
-              <span className="font-mono font-bold">₨ {activeBOQ.summary.subtotalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span className="font-tabular font-bold text-[var(--text-primary)]">
+                ₨ {activeBOQ.summary.subtotalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
             </div>
 
-            <div className="flex items-center justify-between text-slate-400">
+            <div className="flex items-center justify-between text-[var(--text-secondary)]">
               <span>Overhead ({overheadPct}%):</span>
-              <span className="font-mono">+ ₨ {activeBOQ.summary.overheadAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+              <span className="font-tabular font-semibold text-[var(--text-primary)]">
+                ₨ {activeBOQ.summary.overheadAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
             </div>
 
-            <div className="flex items-center justify-between text-emerald-400 font-medium">
-              <span>Profit Margin ({marginPct}%):</span>
-              <span className="font-mono">+ ₨ {activeBOQ.summary.marginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+            <div className="flex items-center justify-between text-[var(--text-secondary)]">
+              <span>Target Margin ({marginPct}%):</span>
+              <span className="font-tabular font-semibold text-[#10B981] dark:text-[#6EE7B7]">
+                ₨ {activeBOQ.summary.marginAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+              </span>
             </div>
 
             {taxPct > 0 && (
-              <div className="flex items-center justify-between text-slate-400">
+              <div className="flex items-center justify-between text-[var(--text-secondary)]">
                 <span>Tax ({taxPct}%):</span>
-                <span className="font-mono">+ ₨ {activeBOQ.summary.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                <span className="font-tabular font-semibold text-[var(--text-primary)]">
+                  ₨ {activeBOQ.summary.taxAmount.toLocaleString(undefined, { minimumFractionDigits: 2 })}
+                </span>
               </div>
             )}
 
-            <div className="pt-3 border-t border-slate-800 flex items-baseline justify-between">
+            <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between">
               <div>
-                <span className="text-xs text-slate-400 uppercase font-mono block">Final Total BOQ Amount</span>
-                <span className="text-2xl font-extrabold text-cyan-400 font-mono">
+                <div className="text-[11px] text-[var(--text-muted)] font-semibold uppercase">Total Project Cost</div>
+                <div className="text-2xl font-black font-tabular text-[#3B82F6] dark:text-[#67E8F9]">
                   ₨ {activeBOQ.summary.finalTotalCost.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </span>
+                </div>
               </div>
               <div className="text-right">
-                <span className="text-xs text-slate-400 uppercase font-mono block">Cost per {activeBOQ.orderUnit.replace(/s$/, '')}</span>
-                <span className="text-xl font-bold text-emerald-400 font-mono">
-                  ₨ {activeBOQ.summary.costPerUnit.toLocaleString(undefined, { minimumFractionDigits: 2 })}
-                </span>
+                <div className="text-[11px] text-[var(--text-muted)] font-semibold uppercase">Cost Per Unit</div>
+                <div className="text-xl font-bold font-tabular text-[#10B981] dark:text-[#6EE7B7]">
+                  ₨ {activeBOQ.summary.costPerUnit.toFixed(2)}
+                </div>
               </div>
             </div>
           </div>
         </div>
+
       </div>
 
-      {/* Ref No Autocomplete Modal */}
+      {/* Reference Search Autocomplete Modal */}
       {showRefSearchModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-xl w-full p-6 space-y-4 shadow-2xl max-h-[85vh] flex flex-col">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white font-['Outfit']">Select Reference from Library</h3>
-              <button
-                onClick={() => {
-                  setShowRefSearchModal(false);
-                  setEditingLineIndex(null);
-                }}
-                className="text-slate-400 hover:text-white cursor-pointer"
-              >
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="card-soft-elevated max-w-lg w-full p-6 space-y-4 rounded-[28px] border border-[var(--border-subtle)]">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+              <h3 className="text-base font-bold text-[var(--text-primary)] font-['Outfit']">Select Textile Reference</h3>
+              <button onClick={() => setShowRefSearchModal(false)} className="btn-tactile text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                ✕
               </button>
             </div>
 
-            <input
-              type="text"
-              value={refSearchQuery}
-              onChange={(e) => setRefSearchQuery(e.target.value)}
-              placeholder="Search by Ref No (e.g. YRN, FAB-W, DYE, PCL), Name, or Yarn Count..."
-              className="w-full px-3.5 py-2.5 bg-slate-950 border border-slate-800 rounded-xl text-xs text-slate-100 focus:outline-none focus:border-cyan-500"
-              autoFocus
-            />
+            <div className="relative">
+              <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3 top-1/2 -translate-y-1/2" />
+              <input
+                type="text"
+                value={refSearchQuery}
+                onChange={(e) => setRefSearchQuery(e.target.value)}
+                placeholder="Search Ref No (e.g. YRN-001, FAB-W-001)..."
+                className="input-soft w-full pl-9 pr-3 py-2 text-xs"
+                autoFocus
+              />
+            </div>
 
-            <div className="flex-1 overflow-y-auto space-y-2 divide-y divide-slate-800/60 max-h-96 pr-1">
-              {filteredSearchRefs.map((item) => (
+            <div className="max-h-72 overflow-y-auto space-y-1.5 divide-y divide-[var(--border-subtle)]">
+              {filteredSearchRefs.slice(0, 15).map((r) => (
                 <div
-                  key={item.refNo}
-                  onClick={() => handleSelectReferenceForLine(item.refNo)}
-                  className="pt-2.5 first:pt-0 p-2 rounded-xl hover:bg-slate-800/60 transition-colors cursor-pointer flex items-center justify-between gap-3"
+                  key={r.refNo}
+                  onClick={() => handleSelectReferenceForLine(r.refNo)}
+                  className="btn-tactile p-3 rounded-[12px] hover:bg-[var(--surface-subtle)] transition-colors cursor-pointer flex items-center justify-between gap-3"
                 >
-                  <div className="space-y-0.5 max-w-md">
+                  <div className="space-y-0.5 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-mono text-xs font-bold text-cyan-400 px-2 py-0.5 rounded bg-cyan-500/10 border border-cyan-500/30">
-                        {item.refNo}
+                      <span className="font-mono text-xs font-bold text-[#3B82F6] dark:text-[#67E8F9] px-2 py-0.5 rounded-[6px] bg-[#6EA8FF]/15 border border-[#6EA8FF]/30">
+                        {r.refNo}
                       </span>
-                      <span className="font-bold text-slate-200 text-xs">{item.marketName}</span>
+                      <span className="text-xs font-bold text-[var(--text-primary)] truncate">{r.marketName}</span>
                     </div>
-                    <p className="text-[11px] text-slate-400 truncate">{item.standardName}</p>
+                    <div className="text-[11px] text-[var(--text-muted)] truncate">{r.standardName}</div>
                   </div>
+
                   <div className="text-right shrink-0">
-                    <div className="font-mono font-bold text-slate-100 text-xs">
-                      ₨ {item.baseRate.toFixed(2)}
+                    <div className="font-tabular font-bold text-xs text-[var(--text-primary)]">
+                      ₨ {r.baseRate.toFixed(2)}
                     </div>
-                    <div className="text-[10px] text-slate-500">per {item.unit}</div>
+                    <div className="text-[10px] text-[var(--text-muted)]">/{r.unit}</div>
                   </div>
                 </div>
               ))}
@@ -791,84 +884,64 @@ export const BOQCalculator: React.FC<BOQCalculatorProps> = ({
 
       {/* Line Override Modal */}
       {overrideLineIndex !== null && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 space-y-4 shadow-2xl">
-            <div className="flex items-center justify-between">
-              <h3 className="text-lg font-bold text-white font-['Outfit']">Set Line Rate Override</h3>
-              <button onClick={() => setOverrideLineIndex(null)} className="text-slate-400 hover:text-white cursor-pointer">
-                <X className="w-5 h-5" />
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="card-soft-elevated max-w-md w-full p-6 space-y-4 rounded-[28px] border border-[var(--border-subtle)]">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
+              <h3 className="text-base font-bold text-[var(--text-primary)] font-['Outfit']">Set Line Rate Override</h3>
+              <button onClick={() => setOverrideLineIndex(null)} className="btn-tactile text-[var(--text-muted)] hover:text-[var(--text-primary)]">
+                ✕
               </button>
             </div>
 
             <div className="space-y-3 text-xs">
               <div>
-                <label className="text-slate-400 block mb-1">Item</label>
-                <div className="font-mono font-bold text-cyan-400 bg-slate-950 p-2 rounded-lg border border-slate-800">
-                  {activeBOQ.lines[overrideLineIndex].refNo} • {activeBOQ.lines[overrideLineIndex].itemName}
+                <label className="text-[var(--text-muted)] block mb-1">Item</label>
+                <div className="font-bold text-[var(--text-primary)] p-2.5 rounded-[12px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
+                  {activeBOQ.lines[overrideLineIndex]?.refNo} — {activeBOQ.lines[overrideLineIndex]?.itemName}
                 </div>
               </div>
 
               <div>
-                <label className="text-slate-400 block mb-1">Base Reference Rate</label>
-                <div className="font-mono text-slate-300 bg-slate-950 p-2 rounded-lg border border-slate-800">
-                  ₨ {activeBOQ.lines[overrideLineIndex].baseRate.toFixed(2)} per {activeBOQ.lines[overrideLineIndex].unit}
-                </div>
-              </div>
-
-              <div>
-                <label className="text-slate-200 font-bold block mb-1">New Override Rate (₨ PKR)</label>
+                <label className="text-[var(--text-primary)] font-bold block mb-1">Override Unit Rate (PKR)</label>
                 <input
                   type="number"
                   step="any"
                   value={overrideRateVal}
                   onChange={(e) => setOverrideRateVal(e.target.value)}
-                  placeholder="Enter custom rate..."
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 font-mono focus:outline-none focus:border-cyan-500"
+                  className="input-soft w-full px-3 py-2 text-xs font-tabular"
                 />
               </div>
 
               <div>
-                <label className="text-slate-400 block mb-1">Override Reason</label>
+                <label className="text-[var(--text-muted)] block mb-1">Override Reason</label>
                 <input
                   type="text"
                   value={overrideReasonVal}
                   onChange={(e) => setOverrideReasonVal(e.target.value)}
-                  placeholder="e.g. Bulk factory discount rate"
-                  className="w-full px-3 py-2 bg-slate-950 border border-slate-800 rounded-xl text-slate-100 focus:outline-none focus:border-cyan-500"
+                  placeholder="e.g. Special bulk vendor contract"
+                  className="input-soft w-full px-3 py-2 text-xs"
                 />
               </div>
-            </div>
 
-            <div className="flex items-center justify-between pt-3 border-t border-slate-800">
-              {activeBOQ.lines[overrideLineIndex].rateOverride !== undefined && (
-                <button
-                  onClick={() => {
-                    handleClearLineOverride(overrideLineIndex);
-                    setOverrideLineIndex(null);
-                  }}
-                  className="text-xs text-rose-400 hover:underline cursor-pointer"
-                >
-                  Clear Override
-                </button>
-              )}
-              <div className="flex items-center gap-2 ml-auto">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   onClick={() => setOverrideLineIndex(null)}
-                  className="px-3 py-1.5 rounded-lg bg-slate-800 text-slate-300 text-xs cursor-pointer"
+                  className="btn-tactile btn-soft-secondary px-4 py-2 text-xs cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleSaveLineOverride}
-                  className="px-4 py-1.5 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs cursor-pointer shadow-md"
+                  className="btn-tactile btn-soft-primary px-4 py-2 text-xs font-bold cursor-pointer"
                 >
-                  Save Override
+                  Apply Override
                 </button>
               </div>
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };

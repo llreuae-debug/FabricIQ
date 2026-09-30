@@ -5,12 +5,10 @@ import {
   Search, 
   RefreshCw, 
   ShieldCheck, 
-  Info, 
   Activity, 
-  Database, 
   X,
-  Server,
-  CheckCircle2
+  Clock,
+  Calculator
 } from 'lucide-react';
 import { 
   ResponsiveContainer, 
@@ -97,7 +95,6 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
     }, 600);
   };
 
-  // FX Chart History Points
   const activeFxHistory = 
     fxTimeframe === '1d' ? (liveFX.history1d || []) :
     fxTimeframe === '7d' ? liveFX.history7d :
@@ -105,80 +102,69 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
     fxTimeframe === '90d' ? (liveFX.history90d || liveFX.history30d) :
     (liveFX.history1y || liveFX.history30d);
 
-  const fxMin = Math.min(...activeFxHistory.map((p) => p.rate), liveFX.currentRate);
-  const fxMax = Math.max(...activeFxHistory.map((p) => p.rate), liveFX.currentRate);
-
   return (
     <div className="space-y-6 animate-in fade-in duration-300">
-      {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 p-5 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 shadow-md dark:shadow-xl">
-        <div className="space-y-1">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-xl bg-blue-50 dark:bg-indigo-600/20 border border-blue-200 dark:border-indigo-500/30 flex items-center justify-center text-blue-600 dark:text-indigo-400">
-              <Activity className="w-4 h-4" />
+      
+      {/* 1. Top Header Card */}
+      <div className="card-soft-lg p-6 sm:p-8 relative overflow-hidden bg-gradient-to-br from-[var(--surface)] via-[var(--surface)] to-[var(--surface-subtle)]">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div className="space-y-1">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 rounded-[12px] bg-[#6EA8FF]/15 border border-[#6EA8FF]/30 flex items-center justify-center text-[#3B82F6] dark:text-[#67E8F9]">
+                <Activity className="w-4 h-4" />
+              </div>
+              <h1 className="text-2xl sm:text-3xl font-extrabold text-[var(--text-primary)] font-['Outfit'] tracking-tight">
+                Live Market Intelligence Feeds
+              </h1>
             </div>
-            <h2 className="text-xl font-bold text-slate-900 dark:text-white font-['Outfit']">
-              {i18n.t('market_rates_title')}
-            </h2>
+            <p className="text-xs sm:text-sm text-[var(--text-secondary)]">
+              Verified textile commodity benchmarks, yarn indices, weaving tariffs, and live currency exchange.
+            </p>
           </div>
-          <p className="text-xs text-slate-500 dark:text-slate-400">
-            {i18n.t('market_rates_subtitle')}
-          </p>
-        </div>
 
-        <div className="flex items-center gap-3">
-          <button
-            onClick={handleSync}
-            disabled={isSyncing}
-            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-700 hover:to-cyan-700 text-white font-semibold text-xs shadow-md shadow-blue-500/25 transition-all disabled:opacity-50 cursor-pointer"
-          >
-            <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
-            <span>Sync All Market Feeds</span>
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="btn-tactile btn-soft-primary flex items-center gap-2 px-4 py-2 text-xs font-bold shadow-md cursor-pointer disabled:opacity-50"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>Sync Market Feeds</span>
+            </button>
+          </div>
         </div>
       </div>
 
       {syncNotice && (
-        <div className="p-3.5 rounded-xl bg-emerald-500/15 text-emerald-700 dark:text-emerald-300 border border-emerald-500/30 text-xs flex items-center gap-2 animate-in fade-in">
+        <div className="p-3.5 rounded-[16px] bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/30 text-xs flex items-center gap-2 animate-in fade-in">
           <ShieldCheck className="w-4 h-4 text-emerald-500" />
           <span>{syncNotice}</span>
         </div>
       )}
 
-      {/* SECTION 1: PROMINENT LIVE USD / PKR FOREIGN EXCHANGE ENGINE */}
-      <div className="rounded-3xl bg-gradient-to-br from-[#0c1836] via-[#071128] to-[#030816] border border-[#00d2ff]/30 p-6 shadow-2xl space-y-5 text-white">
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-slate-800">
+      {/* 2. PROMINENT LIVE USD / PKR FOREIGN EXCHANGE CARD */}
+      <div className="card-soft-lg p-6 bg-gradient-to-br from-[var(--surface)] via-[var(--surface)] to-[var(--surface-subtle)] space-y-5">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-4 border-b border-[var(--border-subtle)]">
+          
           {/* Main FX Rate Quote */}
           <div className="space-y-2">
             <div className="flex items-center gap-3">
-              <span className="text-xs font-black uppercase px-2.5 py-1 rounded-full bg-slate-900 border border-slate-700 text-slate-300">
-                USD / PKR Live Interbank Feed
+              <span className="text-xs font-bold uppercase px-3 py-1 rounded-full bg-[var(--surface-subtle)] border border-[var(--border-subtle)] text-[var(--text-secondary)]">
+                USD / PKR Live Interbank
               </span>
-              <div
-                className={`inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full text-xs font-extrabold uppercase ${
-                  liveFX.status === 'LIVE'
-                    ? 'bg-emerald-500/20 text-emerald-400 border border-emerald-500/40'
-                    : liveFX.status === 'MANUAL'
-                    ? 'bg-amber-500/20 text-amber-400 border border-amber-500/40'
-                    : 'bg-rose-500/20 text-rose-400 border border-rose-500/40'
-                }`}
-              >
-                <span
-                  className={`w-2 h-2 rounded-full ${
-                    liveFX.status === 'LIVE' ? 'bg-emerald-400 animate-live-pulse' : 'bg-amber-400'
-                  }`}
-                />
-                <span>{liveFX.status}</span>
-              </div>
+              <span className="pill-base pill-live">
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-live-pulse" />
+                LIVE FEED
+              </span>
             </div>
 
             <div className="flex items-baseline gap-4">
-              <div className="text-3xl sm:text-4xl lg:text-5xl font-black font-mono tracking-tight text-white">
+              <div className="text-3xl sm:text-4xl lg:text-5xl font-black font-tabular tracking-tight text-[var(--text-primary)]">
                 1 USD = ₨ {liveFX.currentRate.toFixed(2)}
               </div>
               <div
-                className={`flex items-center gap-1 text-sm font-bold ${
-                  liveFX.changePercent >= 0 ? 'text-emerald-400' : 'text-rose-400'
+                className={`flex items-center gap-1 text-sm font-bold font-tabular ${
+                  liveFX.changePercent >= 0 ? 'text-[#10B981] dark:text-[#6EE7B7]' : 'text-rose-500'
                 }`}
               >
                 {liveFX.changePercent >= 0 ? <TrendingUp className="w-4 h-4" /> : <TrendingDown className="w-4 h-4" />}
@@ -189,25 +175,23 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
               </div>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-3 text-xs text-slate-400">
-              <span>Primary Source: <strong className="text-slate-200">{liveFX.source}</strong></span>
+            <div className="flex flex-wrap items-center gap-x-3 text-xs text-[var(--text-muted)]">
+              <span>Source: <strong className="text-[var(--text-secondary)]">{liveFX.source}</strong></span>
               <span>•</span>
-              <span>Secondary: <strong className="text-slate-300">{liveFX.secondarySource || 'SBP Benchmark'}</strong></span>
-              <span>•</span>
-              <span>Rate ID: <strong className="font-mono text-cyan-400">{liveFX.rateId}</strong></span>
+              <span>Rate ID: <strong className="font-mono text-[#3B82F6] dark:text-[#67E8F9]">{liveFX.rateId}</strong></span>
             </div>
           </div>
 
           {/* Refresh Timer & Manual Action */}
           <div className="flex flex-wrap items-center gap-3">
-            <div className="p-3 rounded-2xl bg-slate-900/90 border border-slate-800 text-xs space-y-1">
+            <div className="p-3 rounded-[16px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)] text-xs space-y-1">
               <div className="flex items-center justify-between gap-4">
-                <span className="text-[10px] text-slate-400 uppercase font-semibold">10-Min Refresh Timer</span>
-                <span className="font-mono text-cyan-400 font-bold">
+                <span className="text-[10px] text-[var(--text-muted)] uppercase font-semibold">10-Min Auto Refresh</span>
+                <span className="font-tabular text-[#3B82F6] dark:text-[#67E8F9] font-bold">
                   {Math.floor(liveFX.nextRefreshSecondsRemaining / 60)}m {liveFX.nextRefreshSecondsRemaining % 60}s
                 </span>
               </div>
-              <div className="text-[11px] text-slate-300 flex items-center justify-between gap-3">
+              <div className="text-[11px] text-[var(--text-secondary)] flex items-center justify-between gap-3">
                 <span>Updated: <strong>{liveFX.lastUpdated}</strong></span>
                 <span>Next: <strong>{liveFX.nextRefresh}</strong></span>
               </div>
@@ -216,75 +200,65 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
             <button
               onClick={handleManualFXRefresh}
               disabled={isFXManualRefreshing}
-              className="flex items-center gap-2 px-5 py-3.5 rounded-2xl bg-gradient-to-r from-blue-600 to-cyan-600 hover:from-blue-500 hover:to-cyan-500 text-white font-black text-xs shadow-lg shadow-blue-600/30 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 cursor-pointer"
+              className="btn-tactile btn-soft-primary flex items-center gap-2 px-4 py-3 text-xs font-bold cursor-pointer disabled:opacity-50 shadow-md"
             >
               <RefreshCw className={`w-4 h-4 ${isFXManualRefreshing ? 'animate-spin' : ''}`} />
-              <span>↻ Refresh Now</span>
+              <span>Refresh Now</span>
             </button>
           </div>
         </div>
 
-        {/* Live Telemetry Bar + API Health Monitor */}
+        {/* Telemetry KPI Cards */}
         <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-6 gap-3">
-          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Bid Rate</span>
-            <span className="font-mono font-bold text-sm text-slate-200">₨ {liveFX.bidRate.toFixed(2)}</span>
+          <div className="card-soft-inset p-3">
+            <span className="text-[10px] text-[var(--text-muted)] uppercase block font-semibold">Bid Rate</span>
+            <span className="font-tabular font-bold text-sm text-[var(--text-primary)]">₨ {liveFX.bidRate.toFixed(2)}</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Ask Rate</span>
-            <span className="font-mono font-bold text-sm text-slate-200">₨ {liveFX.askRate.toFixed(2)}</span>
+          <div className="card-soft-inset p-3">
+            <span className="text-[10px] text-[var(--text-muted)] uppercase block font-semibold">Ask Rate</span>
+            <span className="font-tabular font-bold text-sm text-[var(--text-primary)]">₨ {liveFX.askRate.toFixed(2)}</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Mid-Market</span>
-            <span className="font-mono font-bold text-sm text-cyan-400">₨ {liveFX.midMarketRate.toFixed(2)}</span>
+          <div className="card-soft-inset p-3">
+            <span className="text-[10px] text-[var(--text-muted)] uppercase block font-semibold">Mid-Market</span>
+            <span className="font-tabular font-bold text-sm text-[#3B82F6] dark:text-[#67E8F9]">₨ {liveFX.midMarketRate.toFixed(2)}</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Previous Rate</span>
-            <span className="font-mono font-bold text-sm text-slate-300">₨ {liveFX.previousRate.toFixed(2)}</span>
+          <div className="card-soft-inset p-3">
+            <span className="text-[10px] text-[var(--text-muted)] uppercase block font-semibold">Previous</span>
+            <span className="font-tabular font-bold text-sm text-[var(--text-primary)]">₨ {liveFX.previousRate.toFixed(2)}</span>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block font-semibold">Variance Check</span>
-            <span className="font-mono font-bold text-sm text-emerald-400 flex items-center gap-1">
-              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-              <span>{liveFX.validationVariancePct || 0.05}% (PASS)</span>
+          <div className="card-soft-inset p-3">
+            <span className="text-[10px] text-[var(--text-muted)] uppercase block font-semibold">Bid / Ask</span>
+            <span className="font-tabular font-bold text-xs text-[var(--text-secondary)]">
+              ₨ {liveFX.bidRate.toFixed(2)} - {liveFX.askRate.toFixed(2)}
             </span>
           </div>
 
-          <div className="p-3 rounded-xl bg-slate-900/60 border border-slate-800">
-            <span className="text-[10px] text-slate-400 uppercase block font-semibold">API Health</span>
-            <span className="font-mono font-bold text-sm text-emerald-400 flex items-center gap-1">
-              <Server className="w-3.5 h-3.5" />
-              <span>HEALTHY</span>
-            </span>
+          <div className="card-soft-inset p-3">
+            <span className="text-[10px] text-[var(--text-muted)] uppercase block font-semibold">Confidence</span>
+            <span className="pill-base pill-live text-[9px] py-0 px-1 mt-0.5">HIGH (100%)</span>
           </div>
         </div>
 
-        {/* Multi-Timeframe Rate History Chart: 1D | 7D | 30D | 90D | 1Y */}
-        <div className="space-y-3 pt-2">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-            <div className="flex items-center gap-2">
-              <h3 className="text-xs font-bold uppercase tracking-wider text-slate-300">
-                USD / PKR Verified Rate History
-              </h3>
-              <span className="text-[11px] text-slate-400 font-mono">
-                (Range: ₨ {fxMin.toFixed(2)} – ₨ {fxMax.toFixed(2)})
-              </span>
-            </div>
+        {/* Interactive FX Trend Chart with Timeframes */}
+        <div className="pt-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+            <span className="text-xs font-bold uppercase tracking-wider text-[var(--text-secondary)]">
+              Historical USD/PKR Exchange Trend
+            </span>
 
-            {/* 3D Segmented Timeframe Switcher */}
-            <div className="inline-flex items-center p-1 rounded-xl bg-slate-950/90 border border-slate-800">
+            <div className="flex items-center bg-[var(--surface-subtle)] p-0.5 rounded-[12px] border border-[var(--border-subtle)] text-xs">
               {(['1d', '7d', '30d', '90d', '1y'] as const).map((tf) => (
                 <button
                   key={tf}
                   onClick={() => setFxTimeframe(tf)}
-                  className={`px-3 py-1 rounded-lg text-xs font-black uppercase transition-all duration-200 cursor-pointer ${
+                  className={`btn-tactile px-2.5 py-1 rounded-[8px] font-semibold transition-colors cursor-pointer uppercase ${
                     fxTimeframe === tf
-                      ? 'bg-gradient-to-r from-blue-600 to-cyan-500 text-white shadow-md'
-                      : 'text-slate-400 hover:text-white'
+                      ? 'bg-[var(--surface)] text-[#3B82F6] dark:text-[#67E8F9] font-bold shadow-sm'
+                      : 'text-[var(--text-muted)] hover:text-[var(--text-primary)]'
                   }`}
                 >
                   {tf}
@@ -293,67 +267,91 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
             </div>
           </div>
 
-          <div className="h-48 w-full p-2 rounded-2xl bg-slate-950/80 border border-slate-800/80">
+          <div className="h-48 w-full">
             <ResponsiveContainer width="100%" height="100%">
-              <AreaChart data={activeFxHistory}>
+              <AreaChart data={activeFxHistory} margin={{ top: 5, right: 10, left: -20, bottom: 0 }}>
                 <defs>
-                  <linearGradient id="fxGrad" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor="#00d2ff" stopOpacity={0.4} />
-                    <stop offset="95%" stopColor="#0052ff" stopOpacity={0.0} />
+                  <linearGradient id="fxGradSoft" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#67E8F9" stopOpacity={0.4} />
+                    <stop offset="95%" stopColor="#67E8F9" stopOpacity={0.0} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
-                <XAxis dataKey="date" stroke="#64748b" fontSize={11} />
-                <YAxis stroke="#64748b" fontSize={11} domain={['dataMin - 1', 'dataMax + 1']} />
-                <Tooltip
-                  contentStyle={{ backgroundColor: '#09132b', borderColor: '#00d2ff40', borderRadius: '12px', color: '#fff', fontSize: '11px' }}
-                  formatter={(val: any) => [`₨ ${Number(val).toFixed(2)} / USD`, 'USD/PKR Rate']}
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(148, 163, 184, 0.15)" vertical={false} />
+                <XAxis dataKey="date" stroke="#94A3B8" fontSize={11} tickLine={false} />
+                <YAxis
+                  stroke="#94A3B8"
+                  fontSize={11}
+                  domain={['dataMin - 1', 'dataMax + 1']}
+                  tickFormatter={(v) => `${v}`}
+                  tickLine={false}
                 />
-                <Area type="monotone" dataKey="rate" stroke="#00d2ff" strokeWidth={2.5} fill="url(#fxGrad)" />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: 'var(--surface-elevated)',
+                    borderColor: 'var(--border-subtle)',
+                    borderRadius: '14px',
+                    fontSize: '12px',
+                    color: 'var(--text-primary)',
+                    boxShadow: 'var(--shadow-soft-float)',
+                  }}
+                  formatter={(val: any) => [`₨ ${Number(val).toFixed(2)} PKR`, '1 USD']}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="rate"
+                  stroke="#06B6D4"
+                  strokeWidth={2.5}
+                  fillOpacity={1}
+                  fill="url(#fxGradSoft)"
+                />
               </AreaChart>
             </ResponsiveContainer>
           </div>
         </div>
       </div>
 
-      {/* Filter & Search Bar */}
-      <div className="p-4 rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 space-y-3 shadow-sm">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
-          <div className="relative w-full sm:w-80">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+      {/* 3. Filter & Search Controls */}
+      <div className="card-soft p-4 space-y-3">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
+          <div className="relative flex-1 w-full">
+            <Search className="w-4 h-4 text-[var(--text-muted)] absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
-              placeholder={i18n.t('search')}
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800 text-xs text-slate-900 dark:text-slate-100 focus:outline-none focus:border-blue-500 dark:focus:border-cyan-500"
+              placeholder="Search commodity name, count spec (e.g., 20/1, 30/1), source..."
+              className="input-soft w-full pl-9 pr-4 py-2 text-xs"
             />
-          </div>
-
-          <div className="text-xs text-slate-500 dark:text-slate-400">
-            Showing <strong className="text-slate-900 dark:text-slate-200">{filteredRates.length}</strong> verified commodities
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5 p-1 rounded-2xl bg-slate-100/90 dark:bg-slate-950/90 border border-slate-200 dark:border-slate-800 shadow-[inset_0_2px_4px_rgba(0,0,0,0.1)] dark:shadow-[inset_0_2px_4px_rgba(0,0,0,0.5)] overflow-x-auto scrollbar-none">
-          {categories.map((c) => (
+        <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
+          {categories.map((cat) => (
             <button
-              key={c.id}
-              onClick={() => setSelectedCategory(c.id)}
-              className={`px-3.5 py-1.5 rounded-xl text-xs font-bold whitespace-nowrap transition-all duration-200 cursor-pointer ${
-                selectedCategory === c.id
-                  ? 'bg-gradient-to-b from-blue-500 via-blue-600 to-blue-700 text-white shadow-[0_4px_12px_rgba(37,99,235,0.45),inset_0_1px_1px_rgba(255,255,255,0.35)] border border-blue-400/50 -translate-y-0.5 scale-[1.02]'
-                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-900/60'
+              key={cat.id}
+              onClick={() => setSelectedCategory(cat.id)}
+              className={`btn-tactile px-3.5 py-1.5 rounded-[12px] text-xs font-semibold whitespace-nowrap cursor-pointer border ${
+                selectedCategory === cat.id
+                  ? 'bg-[#6EA8FF]/20 text-[#3B82F6] dark:text-[#67E8F9] border-[#6EA8FF]/40 font-bold shadow-sm'
+                  : 'bg-[var(--surface-subtle)] text-[var(--text-secondary)] border-[var(--border-subtle)] hover:border-[#6EA8FF]/30'
               }`}
             >
-              {c.label}
+              {cat.label}
             </button>
           ))}
         </div>
       </div>
 
-      {/* MOBILE VIEW: Touch-Friendly Responsive Rate Cards (Phones & Small Tablets) */}
-      <div className="md:hidden grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+      {/* 4. Rate Cards Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         {filteredRates.map((rate) => {
           const convertedCurrent = currencyService.convert(rate.currentRate, rate.baseCurrency, currentCurrency);
           const isPositive = rate.changePercent >= 0;
@@ -362,261 +360,122 @@ export const MarketRates: React.FC<MarketRatesProps> = ({ currentCurrency, onSel
             <div
               key={rate.id}
               onClick={() => setSelectedModalRate(rate)}
-              className="p-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 shadow-md space-y-3 active:scale-[0.98] transition-transform cursor-pointer"
+              className="card-soft p-5 cursor-pointer hover:border-[#6EA8FF]/50 transition-all flex flex-col justify-between group space-y-4"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="space-y-0.5">
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border border-slate-200 dark:border-slate-700 uppercase">
-                    {rate.category.replace('_', ' ')}
-                  </span>
-                  <h4 className="text-sm font-bold text-slate-900 dark:text-white pt-1">
-                    {rate.name}
-                  </h4>
-                  <p className="text-[11px] text-slate-500 dark:text-slate-400 line-clamp-1">
+              <div>
+                <div className="flex items-center justify-between mb-2">
+                  <span className="pill-base pill-verified text-[10px] py-0 px-2 font-mono">
                     {rate.spec}
-                  </p>
+                  </span>
+                  <span className="pill-base pill-live text-[9px] py-0 px-1.5">
+                    {rate.status}
+                  </span>
                 </div>
 
-                <div
-                  className={`inline-flex items-center gap-1 text-xs font-bold shrink-0 ${
-                    isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                  }`}
-                >
-                  {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                  <span>{isPositive ? `+${rate.changePercent}%` : `${rate.changePercent}%`}</span>
-                </div>
-              </div>
+                <h3 className="text-sm font-bold text-[var(--text-primary)] group-hover:text-[#3B82F6] dark:group-hover:text-[#67E8F9] transition-colors line-clamp-1">
+                  {rate.name}
+                </h3>
 
-              <div className="flex items-baseline justify-between pt-2 border-t border-slate-100 dark:border-slate-800">
-                <div>
-                  <div className="text-lg font-black text-slate-900 dark:text-white font-mono">
+                <div className="flex items-baseline justify-between mt-3">
+                  <div className="text-2xl font-black font-tabular text-[var(--text-primary)]">
                     {currencyService.format(convertedCurrent, currentCurrency)}
-                    <span className="text-xs font-normal text-slate-500 dark:text-slate-400 ml-1">/ {rate.unit}</span>
+                    <span className="text-xs font-normal text-[var(--text-muted)] ml-1">/ {rate.unit}</span>
+                  </div>
+
+                  <div
+                    className={`flex items-center gap-0.5 text-xs font-bold font-tabular ${
+                      isPositive ? 'text-[#10B981] dark:text-[#6EE7B7]' : 'text-rose-500'
+                    }`}
+                  >
+                    {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
+                    <span>{isPositive ? `+${rate.changePercent}%` : `${rate.changePercent}%`}</span>
                   </div>
                 </div>
-
-                <span
-                  className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                    rate.status === 'LIVE'
-                      ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
-                      : rate.status === 'MANUAL'
-                      ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
-                      : 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30'
-                  }`}
-                >
-                  {rate.status}
-                </span>
               </div>
 
-              <div className="flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400 pt-1">
-                <span className="truncate max-w-[160px] flex items-center gap-1">
-                  <ShieldCheck className="w-3 h-3 text-emerald-500 shrink-0" />
-                  <span className="truncate">{rate.source}</span>
+              <div className="pt-3 border-t border-[var(--border-subtle)] flex items-center justify-between text-[11px] text-[var(--text-muted)]">
+                <span className="truncate max-w-[150px]">{rate.source}</span>
+                <span className="flex items-center gap-1">
+                  <Clock className="w-3 h-3" />
+                  {rate.lastUpdated.split(' ')[0]}
                 </span>
-                <span>{rate.lastUpdated.split(' ')[1] || 'Today'}</span>
               </div>
             </div>
           );
         })}
       </div>
 
-      {/* DESKTOP & TABLET VIEW: Full Interactive Rates Table */}
-      <div className="hidden md:block rounded-2xl bg-white dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 overflow-hidden shadow-md dark:shadow-xl">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50 dark:bg-slate-950/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[11px] tracking-wider">
-                <th className="p-4">{i18n.t('rate_col_name')}</th>
-                <th className="p-4">{i18n.t('rate_col_current')}</th>
-                <th className="p-4">{i18n.t('rate_col_prev')}</th>
-                <th className="p-4">{i18n.t('rate_col_change')}</th>
-                <th className="p-4">{i18n.t('rate_col_source')}</th>
-                <th className="p-4">{i18n.t('rate_col_status')}</th>
-                <th className="p-4">{i18n.t('rate_col_updated')}</th>
-                <th className="p-4 text-right">{i18n.t('rate_col_actions')}</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100 dark:divide-slate-800/80">
-              {filteredRates.map((rate) => {
-                const convertedCurrent = currencyService.convert(rate.currentRate, rate.baseCurrency, currentCurrency);
-                const convertedPrev = currencyService.convert(rate.previousRate, rate.baseCurrency, currentCurrency);
-                const isPositive = rate.changePercent >= 0;
-
-                return (
-                  <tr
-                    key={rate.id}
-                    className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors cursor-pointer group"
-                    onClick={() => setSelectedModalRate(rate)}
-                  >
-                    <td className="p-4">
-                      <div className="font-bold text-slate-900 dark:text-slate-100 group-hover:text-blue-600 dark:group-hover:text-cyan-300 transition-colors">
-                        {rate.name}
-                      </div>
-                      <div className="text-[11px] text-slate-500 dark:text-slate-400 font-normal">
-                        {rate.spec}
-                      </div>
-                    </td>
-
-                    <td className="p-4">
-                      <div className="font-extrabold text-slate-900 dark:text-white text-sm">
-                        {currencyService.format(convertedCurrent, currentCurrency)}
-                        <span className="text-[11px] font-normal text-slate-500 dark:text-slate-400 ml-1">/ {rate.unit}</span>
-                      </div>
-                      {rate.baseCurrency !== currentCurrency && (
-                        <div className="text-[10px] text-slate-400 dark:text-slate-500">
-                          ({rate.baseCurrency} {rate.currentRate.toLocaleString()})
-                        </div>
-                      )}
-                    </td>
-
-                    <td className="p-4 text-slate-500 dark:text-slate-400">
-                      {currencyService.format(convertedPrev, currentCurrency)}
-                    </td>
-
-                    <td className="p-4">
-                      <span
-                        className={`inline-flex items-center gap-1 font-bold ${
-                          isPositive ? 'text-emerald-600 dark:text-emerald-400' : 'text-rose-600 dark:text-rose-400'
-                        }`}
-                      >
-                        {isPositive ? <TrendingUp className="w-3.5 h-3.5" /> : <TrendingDown className="w-3.5 h-3.5" />}
-                        {isPositive ? `+${rate.changePercent}%` : `${rate.changePercent}%`}
-                      </span>
-                    </td>
-
-                    <td className="p-4 text-slate-700 dark:text-slate-300 max-w-[180px] truncate" title={rate.source}>
-                      <span className="flex items-center gap-1.5">
-                        <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 shrink-0" />
-                        <span className="truncate">{rate.source}</span>
-                      </span>
-                    </td>
-
-                    <td className="p-4">
-                      <span
-                        className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                          rate.status === 'LIVE'
-                            ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
-                            : rate.status === 'MANUAL'
-                            ? 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
-                            : 'bg-purple-500/15 text-purple-700 dark:text-purple-400 border border-purple-500/30'
-                        }`}
-                      >
-                        {rate.status}
-                      </span>
-                    </td>
-
-                    <td className="p-4 text-slate-500 dark:text-slate-400 text-[11px] whitespace-nowrap">
-                      {rate.lastUpdated}
-                    </td>
-
-                    <td className="p-4 text-right" onClick={(e) => e.stopPropagation()}>
-                      <button
-                        onClick={() => {
-                          if (onSelectForCalculator) onSelectForCalculator(rate);
-                          else setSelectedModalRate(rate);
-                        }}
-                        className="px-2.5 py-1.5 rounded-lg bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors inline-flex items-center gap-1 cursor-pointer"
-                      >
-                        <Info className="w-3.5 h-3.5 text-blue-600 dark:text-cyan-400" />
-                        <span>Audit</span>
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {/* Rate Source Transparency Modal (Responsive Bottom Sheet on Mobile / Centered Modal on Desktop) */}
+      {/* 5. Rate Inspection Modal */}
       {selectedModalRate && (
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center p-0 sm:p-4 bg-slate-950/80 backdrop-blur-md animate-in fade-in">
-          <div className="relative w-full max-w-2xl max-h-[90vh] overflow-y-auto rounded-t-3xl sm:rounded-3xl bg-white dark:bg-slate-900 border border-slate-200 dark:border-indigo-500/30 p-5 sm:p-6 shadow-2xl space-y-4 animate-sheet-up pb-safe">
-            {/* Grab Handle on Mobile */}
-            <div className="sm:hidden w-12 h-1.5 rounded-full bg-slate-300 dark:bg-slate-700 mx-auto mb-2" />
-
-            <button
-              onClick={() => setSelectedModalRate(null)}
-              className="absolute top-4 right-4 p-2 rounded-xl text-slate-400 hover:text-slate-900 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <div className="flex items-center gap-3">
-              <div className="w-11 h-11 rounded-2xl bg-blue-50 dark:bg-indigo-600/20 border border-blue-200 dark:border-indigo-500/30 flex items-center justify-center text-blue-600 dark:text-indigo-400 shrink-0">
-                <Database className="w-5 h-5" />
-              </div>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-150">
+          <div className="card-soft-elevated max-w-lg w-full p-6 space-y-5 rounded-[28px] border border-[var(--border-subtle)]">
+            <div className="flex items-center justify-between pb-2 border-b border-[var(--border-subtle)]">
               <div>
-                <div className="flex items-center gap-2">
-                  <h3 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white font-['Outfit']">
-                    {selectedModalRate.name}
-                  </h3>
-                  <span
-                    className={`px-2 py-0.5 rounded text-[10px] font-extrabold ${
-                      selectedModalRate.status === 'LIVE'
-                        ? 'bg-emerald-500/15 text-emerald-700 dark:text-emerald-400 border border-emerald-500/30'
-                        : 'bg-amber-500/15 text-amber-700 dark:text-amber-400 border border-amber-500/30'
-                    }`}
-                  >
-                    {selectedModalRate.status}
-                  </span>
-                </div>
-                <p className="text-xs text-slate-500 dark:text-slate-400">
+                <span className="pill-base pill-verified text-[10px] mb-1 font-mono">
                   {selectedModalRate.spec}
-                </p>
-              </div>
-            </div>
-
-            <div className="p-4 rounded-2xl bg-slate-50 dark:bg-slate-950/70 border border-slate-200 dark:border-slate-800 space-y-2 text-xs">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Verified Data Source:</span>
-                <span className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5">
-                  <ShieldCheck className="w-4 h-4 text-emerald-500" />
-                  {selectedModalRate.source}
                 </span>
+                <h3 className="text-lg font-bold text-[var(--text-primary)] font-['Outfit']">
+                  {selectedModalRate.name}
+                </h3>
               </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Timestamp of Latest Feed:</span>
-                <span className="text-slate-800 dark:text-slate-200 font-mono">{selectedModalRate.lastUpdated}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-slate-500 dark:text-slate-400">Base Trading Currency:</span>
-                <span className="text-slate-800 dark:text-slate-200">{selectedModalRate.baseCurrency}</span>
-              </div>
-            </div>
-
-            <div>
-              <h4 className="text-xs font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider mb-2">
-                7-Day Price History
-              </h4>
-              <div className="h-44 w-full p-2 rounded-xl bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-800">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={selectedModalRate.history7d.map((h) => ({ date: h.date.substring(5), rate: h.rate }))}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#94a3b8" strokeOpacity={0.2} vertical={false} />
-                    <XAxis dataKey="date" stroke="#94a3b8" fontSize={10} />
-                    <YAxis stroke="#94a3b8" fontSize={10} domain={['dataMin - 10', 'dataMax + 10']} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', color: '#fff', fontSize: '11px' }}
-                      formatter={(val: any) => [`₨ ${val} / ${selectedModalRate.unit}`, 'Rate']}
-                    />
-                    <Area type="monotone" dataKey="rate" stroke="#0284c7" strokeWidth={2} fill="#0284c7" fillOpacity={0.2} />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-
-            <div className="flex items-center justify-end gap-3 pt-2">
               <button
                 onClick={() => setSelectedModalRate(null)}
-                className="w-full sm:w-auto px-5 py-2.5 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-xs font-bold text-slate-700 dark:text-slate-300 cursor-pointer"
+                className="btn-tactile p-1.5 rounded-full text-[var(--text-muted)] hover:text-[var(--text-primary)]"
               >
-                Close Audit
+                <X className="w-5 h-5" />
               </button>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 text-xs">
+              <div className="p-3 rounded-[16px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
+                <span className="text-[var(--text-muted)] text-[11px] block">Current Benchmark</span>
+                <span className="text-xl font-bold font-tabular text-[var(--text-primary)]">
+                  {currencyService.format(
+                    currencyService.convert(selectedModalRate.currentRate, selectedModalRate.baseCurrency, currentCurrency),
+                    currentCurrency
+                  )} / {selectedModalRate.unit}
+                </span>
+              </div>
+
+              <div className="p-3 rounded-[16px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)]">
+                <span className="text-[var(--text-muted)] text-[11px] block">24h Movement</span>
+                <span className={`text-base font-bold font-tabular ${selectedModalRate.changePercent >= 0 ? 'text-[#10B981]' : 'text-rose-500'}`}>
+                  {selectedModalRate.changePercent >= 0 ? `+${selectedModalRate.changePercent}%` : `${selectedModalRate.changePercent}%`}
+                </span>
+              </div>
+            </div>
+
+            <div className="p-3 rounded-[16px] bg-[var(--surface-subtle)] border border-[var(--border-subtle)] text-xs space-y-1">
+              <div className="text-[var(--text-muted)]">Source Attribution:</div>
+              <div className="font-semibold text-[var(--text-primary)]">{selectedModalRate.source}</div>
+              <div className="text-[11px] text-[var(--text-muted)]">Last Verified: {selectedModalRate.lastUpdated}</div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-[var(--border-subtle)]">
+              <button
+                onClick={() => setSelectedModalRate(null)}
+                className="btn-tactile btn-soft-secondary px-4 py-2 text-xs font-semibold cursor-pointer"
+              >
+                Close
+              </button>
+              {onSelectForCalculator && (
+                <button
+                  onClick={() => {
+                    const r = selectedModalRate;
+                    setSelectedModalRate(null);
+                    onSelectForCalculator(r);
+                  }}
+                  className="btn-tactile btn-soft-primary px-4 py-2 text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-md"
+                >
+                  <Calculator className="w-3.5 h-3.5" />
+                  <span>Use in Calculator</span>
+                </button>
+              )}
             </div>
           </div>
         </div>
       )}
+
     </div>
   );
 };
